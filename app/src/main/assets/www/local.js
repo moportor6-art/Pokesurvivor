@@ -151,6 +151,12 @@
     '#rec-link,#video-yt,#chal-rank,#legal-delete,#f-forgot,[data-go="friends"],[data-go="rank"],#scr-mod{display:none!important}',
     // los huecos de Amigos y Clasificación los ocupan Gacha y Misiones
     '.menu-list [data-go="gacha"]{grid-row:1 / span 2!important}.menu-list [data-go="goals"]{grid-column:7 / span 4!important}',
+    // Menú más grande: sin el video ni el foro de la derecha, el menú usa ese espacio y la letra crece;
+    // Gacha y Misiones (que quedaron más grandes) muestran su descripción
+    '#scr-menu{grid-template-columns:minmax(0,1fr) 250px!important}',
+    '#scr-menu .menu-right,#scr-menu .menu-right>.box{width:auto!important;max-width:none!important;justify-self:stretch!important}',
+    '.menu-list>*:not([data-go="play"]){font-size:1.18em!important}',
+    '.menu-list [data-go="gacha"] small,.menu-list [data-go="goals"] small{display:block!important;font-size:.62em!important;opacity:.8;margin-top:4px;white-space:normal}',
     '#scr-login .tabs,#scr-login #f-pass,#scr-login label[for="f-pass"]{display:none!important}',
     '#scr-login.ps-local .ps-local-note{margin:4px 0 10px;color:#ffd23f;font-size:.85em;line-height:1.35}',
     '.ps-upd{margin:0 0 14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.15)}',
