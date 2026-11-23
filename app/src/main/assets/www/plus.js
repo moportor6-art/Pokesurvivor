@@ -396,8 +396,68 @@
     '.psp-opt{display:flex;gap:10px;align-items:center;width:100%;padding:8px;margin:0 0 6px;border-radius:8px;border:0;background:rgba(255,255,255,.07);color:inherit;font:inherit;text-align:left}',
     '.psp-opt small,.psp-fov small{display:block;opacity:.75;font-size:11px;margin-top:2px}',
     '.psp-opt .sw{flex:none;width:38px;height:22px;border-radius:11px;background:#3a4470;position:relative}.psp-opt .sw:after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#cfd8ff;transition:left .15s}',
-    '.psp-opt .sw.on{background:#5fd35f}.psp-opt .sw.on:after{left:19px;background:#fff}.psp-fov{padding:8px;margin-bottom:8px}.psp-fov div{display:flex;gap:6px;margin-top:6px}'
+    '.psp-opt .sw.on{background:#5fd35f}.psp-opt .sw.on:after{left:19px;background:#fff}.psp-fov{padding:8px;margin-bottom:8px}.psp-fov div{display:flex;gap:6px;margin-top:6px}',
+    // Pokédex para teléfono
+    '#scr-dex .box.wide{overflow:hidden!important;display:flex!important;flex-direction:column;padding-top:8px!important;padding-bottom:8px!important;gap:5px}',
+    '#scr-dex .box.wide>.row{flex:none;margin:0!important}#scr-dex .box.wide>.row h2{font-size:17px;margin:0;white-space:nowrap}#scr-dex .box.wide>.row .btn{padding-top:3px;padding-bottom:3px}',
+    '#scr-dex #dex-gens{flex:none;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;gap:5px;margin:0!important;padding:1px 0 3px;scrollbar-width:none}',
+    '#scr-dex #dex-gens .gen-tab{flex:none;flex-direction:row!important;align-items:baseline;gap:5px;padding:4px 9px!important;min-height:0!important}#scr-dex #dex-gens .gen-tab b{font-size:13px}#scr-dex #dex-gens .gen-tab small{font-size:10px;opacity:.8}',
+    '#scr-dex .split{flex:1;min-height:0;margin:0!important;grid-template-columns:minmax(0,1fr) 236px!important;gap:8px}',
+    '#scr-dex .split>div:first-child{position:relative;min-height:0;display:flex!important;flex-direction:column;gap:5px}',
+    '#scr-dex .dex-tools{flex:none;flex-wrap:nowrap!important;gap:5px;align-items:center}#scr-dex #dex-q{flex:1 1 120px;min-width:90px;height:30px}#scr-dex #dex-type{flex:0 1 120px;min-width:84px;height:30px}',
+    '#scr-dex #dex-count{white-space:nowrap;font-size:11px}#scr-dex .psp-fbtn{flex:0 1 auto;max-width:150px;min-width:0;overflow:hidden}#scr-dex .psp-fbtn span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '#scr-dex #dex-rand,#scr-dex #dex-clear{flex:none;padding-left:8px;padding-right:8px}#scr-dex #dex-rand{font-size:0!important;width:36px}#scr-dex #dex-rand img{width:16px;height:16px;margin:0}#scr-dex #dex-count{display:none}#scr-dex .psp-cnt{font-size:11px;opacity:.8;margin-left:6px}',
+    '#scr-dex #dex-grid{flex:1;min-height:0;max-height:none!important;height:auto!important;overflow-y:auto!important;grid-template-columns:repeat(auto-fill,minmax(68px,1fr))!important;gap:5px!important;align-content:start;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}',
+    '#scr-dex #dex-grid{grid-auto-rows:92px}#scr-dex #dex-grid .cell{height:92px!important;min-height:0!important;padding:3px 2px 2px!important;overflow:hidden}#scr-dex #dex-grid .cell canvas{width:54px!important;height:47px!important;margin:0 auto}',
+    '#scr-dex #dex-grid .cell b{font-size:10px}#scr-dex #dex-grid .cell .no{font-size:9px}',
+    '#scr-dex .psp-sheet{display:none;position:absolute;left:0;right:0;top:36px;z-index:5;padding:8px;border-radius:10px;background:#1c2a66;box-shadow:0 6px 18px rgba(0,0,0,.5);max-height:calc(100% - 36px);overflow-y:auto}',
+    '#scr-dex .psp-sheet.open{display:block}.psp-sheet-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}',
+    '#scr-dex .psp-sheet .filters{flex-wrap:wrap!important;overflow:visible!important;gap:5px;margin:0 0 6px!important}#scr-dex .psp-sheet .chip{font-size:12px}',
+    '#scr-dex #dex-detail{min-height:0;overflow-y:auto!important;padding:6px!important}#scr-dex #dex-detail .dex-stage{transform:scale(.85);transform-origin:top center;margin-bottom:-14px}'
   ].join('');
+
+
+  // ─── Pokédex para teléfono ───
+  // La pantalla original apila 3 filas de filtros encima de la lista y deja muy poco para ver Pokémon.
+  // Aquí: regiones en una tira deslizable, buscador + tipo + «Filtros» en una sola fila, y los filtros/orden
+  // en una hoja que se abre encima de la lista (la lista usa toda la altura). El botón dice qué filtros están puestos.
+  var dexHooked = false;
+  var hookDex = safe('Pokédex móvil', function () {
+    var scr = document.getElementById('scr-dex');
+    if (!scr) return;
+    var tools = scr.querySelector('.dex-tools'), filters = document.getElementById('dex-filters'), sort = document.getElementById('dex-sort');
+    if (!tools || !filters || !sort) return;
+    var btn = scr.querySelector('.psp-fbtn');
+    if (!btn) {
+      btn = el('button', 'btn small psp-fbtn', 'Filtros');
+      var sheet = el('div', 'psp-sheet');
+      var head = el('div', 'psp-sheet-h', '<b>Filtros y orden</b>');
+      var ok = el('button', 'btn small gold', 'Listo');
+      head.appendChild(ok);
+      sheet.appendChild(head);
+      sheet.appendChild(filters);
+      sheet.appendChild(sort);
+      tools.parentNode.appendChild(sheet);
+      var rand = document.getElementById('dex-rand');
+      tools.insertBefore(btn, rand || null);
+      btn.addEventListener('click', function () { sheet.classList.toggle('open'); });
+      ok.addEventListener('click', function () { sheet.classList.remove('open'); });
+    }
+    // Resumen de lo que está activo (sin contar «Todos» y el orden por número)
+    var on = [].slice.call(filters.querySelectorAll('.chip.on')).concat([].slice.call(sort.querySelectorAll('.chip.on')))
+      .filter(function (c, i, all) { return !(c.parentNode === filters && c === filters.querySelector('.chip')) && !(c.parentNode === sort && c === sort.querySelector('.chip')); })
+      .map(function (c) { return c.textContent.trim(); });
+    var ty = document.getElementById('dex-type');   // «Todos los tipos» no cabe: «Tipo: todos»
+    if (ty && ty.options[0] && ty.options[0].value === '' && ty.options[0].text !== 'Tipo') ty.options[0].text = 'Tipo';
+    var cnt = document.getElementById('dex-count'), h2 = scr.querySelector('.box.wide > .row h2');
+    if (cnt && h2) {
+      var c = h2.querySelector('.psp-cnt');
+      if (!c) { c = el('span', 'psp-cnt'); h2.appendChild(c); }
+      if (c.textContent !== '· ' + cnt.textContent) c.textContent = '· ' + cnt.textContent;
+    }
+    var label = on.length ? 'Filtros · ' + on.join(' · ') : 'Filtros';
+    if (btn.dataset.l !== label) { btn.dataset.l = label; btn.innerHTML = '<span>' + label + '</span>'; btn.classList.toggle('gold', on.length > 0); }
+  });
 
   window.PSPlus = { modules: M, failed: failed, endless: endless, cfg: cfg };   // para revisar desde las pruebas
 
@@ -407,6 +467,7 @@
     if (!modules()) return;
     hookEndless();
     hookUi();
+    hookDex();
     var st = M.G.state, pl = M.G.player;
     if (st === 'playing' && lastState !== 'playing' && lastState !== 'paused') { startRun(); applyFov(); }
     if (st === 'over' && (lastState === 'playing' || lastState === 'paused')) endRun();
