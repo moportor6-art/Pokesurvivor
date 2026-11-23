@@ -417,6 +417,9 @@
     '.psp-claim{display:block;margin:-4px 0 4px auto}.psp-over{margin:8px 0;padding:8px 10px;border-radius:10px;background:rgba(95,224,138,.12);border:1px solid rgba(95,224,138,.45);text-align:center}',
     '.psp-over .l{font-size:13px;margin-bottom:6px}',
     '.psp-pw{margin-top:3px;font-size:11px;line-height:1.3;color:#ffd9a0}.psp-pw b{color:#ffe14d}.psp-pw i{opacity:.75;font-style:normal}',
+    '.psp-gall{background:#7b4ae0!important;color:#fff!important}.psp-uall{margin-left:8px}',
+    '#scr-dex #dex-detail .dex-stage{transform:scale(.7)!important;transform-origin:top center!important;margin:0 auto -34px!important}#scr-dex #dex-detail h3,#scr-dex #dex-detail .dex-name{font-size:15px!important;margin:2px 0!important}',
+    '#scr-dex #dex-detail{font-size:12px}#scr-dex #dex-detail .btn{padding-top:6px!important;padding-bottom:6px!important;font-size:13px}#scr-dex #dex-detail .stat,#scr-dex #dex-detail .bar{margin-top:2px!important}',
     // Pokédex para teléfono
     '#scr-dex .box.wide{overflow:hidden!important;display:flex!important;flex-direction:column;padding-top:8px!important;padding-bottom:8px!important;gap:5px}',
     '#scr-dex .box.wide>.row{flex:none;margin:0!important}#scr-dex .box.wide>.row h2{font-size:17px;margin:0;white-space:nowrap}#scr-dex .box.wide>.row .btn{padding-top:3px;padding-bottom:3px}',
@@ -794,7 +797,19 @@
       (pl && pl.moves || []).forEach(function (m) { if (m && m.id === id) own = m; });
       var html = '';
       if (!def.dmg) continue;   // de apoyo (Danza Espada…): ya dice que no hace daño
-      if (own && own.lvl < def.maxLvl && !/Nuevo|New/i.test(nm.textContent)) {
+      if (own && !own.evolved && own.lvl >= def.maxLvl && Mv.evolve) {   // carta de evolución del ataque (+)
+        var ev = Object.assign({}, own);
+        try { Mv.evolve(ev); } catch (e) { ev = null; }
+        if (ev && ev.evolved) {
+          var a0 = pw(own), b0 = pw(ev), p0 = [];
+          if (Math.abs(b0.d - a0.d) > 0.05) p0.push('Daño ' + Math.round(a0.d) + ' → <b>' + Math.round(b0.d) + '</b>');
+          if (b0.n !== a0.n) p0.push('Golpes ' + a0.n + ' → <b>' + b0.n + '</b>');
+          if (Math.abs(b0.cd - a0.cd) > 0.005) p0.push('Recarga ' + n1(a0.cd) + ' s → <b>' + n1(b0.cd) + ' s</b>');
+          if (b0.p !== a0.p) p0.push('Perfora ' + a0.p + ' → <b>' + b0.p + '</b>');
+          p0.push('Daño/s ' + Math.round(a0.dps) + ' → <b>' + Math.round(b0.dps) + '</b> (' + (b0.dps >= a0.dps ? '+' : '') + Math.round((b0.dps / Math.max(0.01, a0.dps) - 1) * 100) + ' %)');
+          html = 'Al evolucionar: ' + p0.join(' · ');
+        }
+      } else if (own && own.lvl < def.maxLvl && !/Nuevo|New/i.test(nm.textContent)) {
         var a = pw(Mv.instance(id, own.lvl)), b = pw(Mv.instance(id, own.lvl + 1)), parts = [];
         if (Math.abs(b.d - a.d) > 0.05) parts.push('Daño ' + Math.round(a.d) + ' → <b>' + Math.round(b.d) + '</b>');
         if (b.n !== a.n) parts.push('Golpes ' + a.n + ' → <b>' + b.n + '</b>');
@@ -807,12 +822,80 @@
         html = 'Potencia ' + Math.round(x.d) + (x.n > 1 ? ' ×' + x.n : '') + ' · cada ' + n1(x.cd) + ' s' + (x.p ? ' · perfora ' + x.p : '') + ' · <b>' + Math.round(x.dps) + ' daño/s</b>';
         if (own) html += ' <i>(Nv. ' + own.lvl + ' ahora: ' + Math.round(pw(own).dps) + ' daño/s)</i>';
       }
+      if (!html) continue;
       var box = el('div', 'psp-pw', html);
       (c.querySelector('.txt') || c).appendChild(box);
     }
   });
 
-  window.PSPlus = { stock: function () { return healStock; }, claimAll: claimAll, readyMissions: readyMissions, modules: M, spare: spare, sprint: sprint, failed: failed, endless: endless, cfg: cfg };   // para revisar desde las pruebas
+
+  // ─── Gacha: «Usar todos» sin animación ───
+  // Gasta todos los tickets del banner elegido de golpe (primero los ×10, luego los normales de 10 en 10, que es como
+  // se garantiza el épico de cada tanda) y enseña un resumen: nuevos, shinies y monedas por repetidos.
+  function gachaAll() {
+    var B = window.PSLocal.game(), G = B.Gacha, sv = saveObj();
+    var on = $('#gacha-gens .gen-tab.on'), gen = on ? +on.dataset.gen : 1;
+    if (!G || !sv) return;
+    var res = [], coins0 = sv.coins || 0, guard = 0, r, own0 = Object.assign({}, sv.owned || {}), sh0 = Object.assign({}, sv.shiny || {});
+    while (guard++ < 500 && (r = G.pull(sv, 10, gen, 't10'))) res = res.concat(r);
+    while (guard++ < 1000 && (r = G.pull(sv, 10, gen, 't1'))) res = res.concat(r);
+    if (!res.length) { toast('No te alcanzan los tickets para una tirada ×10', '#ff6f7d'); return; }
+    try { (find(['register', 'login', 'commit'])).commit(true); } catch (e) { /* se guarda al salir */ }
+    try { B.UI.refreshCoins(); } catch (e) { /* nada */ }
+    var news = Object.keys(sv.owned || {}).filter(function (d) { return !own0[d]; }).map(function (d) { return { dex: +d, shiny: !!(sv.shiny && sv.shiny[d] && !sh0[d]) }; });
+    var shinies = Object.keys(sv.shiny || {}).filter(function (d) { return !sh0[d]; }).map(function (d) { return { dex: +d, shiny: true }; });
+    var names = function (l) { return l.map(function (x) { try { return B.T(B._016f809[x.dex].name) + (x.shiny ? ' ✦' : ''); } catch (e) { return '#' + x.dex; } }); };
+    var box = el('div', 'psp-panel');
+    box.innerHTML = '<div class="box psp-box" style="height:auto;max-height:90vh"><div class="psp-top"><b>Gacha · ' + res.length + ' tiradas</b><div class="psp-tabs"></div><button class="btn small gold" data-a="ok">Listo</button></div><div class="psp-body">'
+      + '<p class="psp-sum">' + news.length + ' nuevos · ' + shinies.length + ' shiny · +' + ((sv.coins || 0) - coins0) + ' monedas por repetidos</p>'
+      + (news.length ? '<p><b>Nuevos:</b> ' + names(news).join(', ') + '</p>' : '<p class="psp-empty">Ninguno nuevo esta vez.</p>')
+      + (shinies.length ? '<p><b>Shiny:</b> ' + names(shinies).join(', ') + '</p>' : '') + '</div></div>';
+    box.addEventListener('click', function (e) { if (e.target === box || e.target.closest('[data-a="ok"]')) { box.remove(); if (on) on.click(); } });
+    document.body.appendChild(box);
+  }
+  var hookGacha = safe('Gacha: usar todos', function () {
+    var p10 = document.getElementById('pull-10');
+    if (!p10 || !visible('scr-gacha') || document.getElementById('psp-gall')) return;
+    var b = el('button', 'btn grow psp-gall', 'Usar todos');
+    b.id = 'psp-gall';
+    b.title = 'Gasta todos tus tickets en este banner, sin animación';
+    b.addEventListener('click', function () { if (b.dataset.sure) { delete b.dataset.sure; b.textContent = 'Usar todos'; gachaAll(); } else { b.dataset.sure = 1; b.textContent = '¿Todos? Toca otra vez'; setTimeout(function () { delete b.dataset.sure; b.textContent = 'Usar todos'; }, 3000); } });
+    p10.parentNode.appendChild(b);
+  });
+
+  // ─── Mejoras: «Subir todo» ───
+  // Compra todas las mejoras que te alcancen para el Pokémon elegido, de la más barata a la más cara.
+  function upgAll() {
+    var bought = 0, spent = 0, skip = {};
+    var rowName = function (btn) { var r = btn.closest('.upg-item'); var b = r && r.querySelector('b'); return b ? b.textContent : ''; };
+    var guard = 0;
+    (function step() {
+      if (guard++ >= 300) return done();
+      var btns = [].slice.call(document.querySelectorAll('#upg-list [data-buy]')).filter(function (x) { return !x.disabled && !skip[rowName(x)]; });
+      if (!btns.length) return done();
+      btns.sort(function (a, b) { return (parseInt(a.textContent.replace(/\D/g, ''), 10) || 0) - (parseInt(b.textContent.replace(/\D/g, ''), 10) || 0); });
+      var sv = saveObj(), before = sv ? sv.coins : 0, nm = rowName(btns[0]);
+      if (sv && (parseInt(btns[0].textContent.replace(/\D/g, ''), 10) || 0) > sv.coins) return done();   // la más barata ya no alcanza
+      btns[0].click();
+      var open = [].slice.call(document.querySelectorAll('section.scr')).filter(function (x) { return !x.classList.contains('hidden') && getComputedStyle(x).display !== 'none'; });
+      if (open.length && open[open.length - 1].id !== 'scr-upgrades') { var back = open[open.length - 1].querySelector('[data-back],.btn.ghost'); if (back) back.click(); }
+      if (!sv || sv.coins >= before) skip[nm] = 1;   // esta pide elegir algo (p. ej. movimiento inicial): se deja a mano
+      else { bought++; spent += before - sv.coins; }
+      setTimeout(step, 160);   // el juego no deja comprar dos veces seguidas sin una pausa
+    })();
+    function done() { toast(bought ? 'Subidas ' + bought + ' mejoras por ' + spent + ' monedas' : 'No te alcanza para ninguna mejora', bought ? '#5fe08a' : '#ff6f7d'); }
+  }
+  var hookUpg = safe('Mejoras: subir todo', function () {
+    var list = document.getElementById('upg-list');
+    if (!list || !visible('scr-upgrades') || document.getElementById('psp-uall')) return;
+    var b = el('button', 'btn small gold psp-uall', 'Subir todo');
+    b.id = 'psp-uall';
+    b.addEventListener('click', function () { if (b.dataset.sure) { delete b.dataset.sure; b.textContent = 'Subir todo'; upgAll(); } else { b.dataset.sure = 1; b.textContent = '¿Seguro? Toca otra vez'; setTimeout(function () { delete b.dataset.sure; b.textContent = 'Subir todo'; }, 3000); } });
+    var sel = document.getElementById('upg-mon');
+    (sel && sel.parentNode ? sel.parentNode : list.parentNode).appendChild(b);
+  });
+
+  window.PSPlus = { gachaAll: gachaAll, upgAll: upgAll, stock: function () { return healStock; }, claimAll: claimAll, readyMissions: readyMissions, modules: M, spare: spare, sprint: sprint, failed: failed, endless: endless, cfg: cfg };   // para revisar desde las pruebas
 
   // ─── Bucle ───
   var lastState = '', lastT = 0;
@@ -822,6 +905,8 @@
     hookUi();
     hookRewards();
     hookDex();
+    hookGacha();
+    hookUpg();
     var st = M.G.state, pl = M.G.player;
     // Partida nueva: solo al empezar de verdad (no al volver de subir de nivel, evolucionar o un evento,
     // que también pasan por otros estados y antes reiniciaban las bayas guardadas y el modo sin fin)
