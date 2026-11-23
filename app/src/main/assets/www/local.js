@@ -160,6 +160,9 @@
     '.menu-list [data-go="mastery"],.menu-list [data-go="profile"]{white-space:nowrap;overflow:hidden;font-size:.95em}',
     // nombre en la barra de arriba: el ancho se ajusta al nombre (corto = pastilla chica, largo = más grande)
     '#user-pill{max-width:min(46vw,320px)!important;width:auto!important;min-width:0!important}#user-pill span{max-width:none!important;overflow:visible!important;text-overflow:clip!important;white-space:nowrap}',
+    // Ajustes (y cualquier ventana con pestañas): en pantallas bajas las pestañas se aplastaban a una raya cuando
+    // la pestaña elegida tenía mucho contenido. Las pestañas no se encogen; el contenido es el que se desliza.
+    '.box>.tabs,.box>.gen-tabs,#scr-settings .tabs{flex-shrink:0!important}#set-body{min-height:0!important;flex:1 1 auto;overflow-y:auto!important}',
     // Pokémon: los filtros y el orden bajan a otra línea en vez de cortarse
     '#scr-dex .filters{flex-wrap:wrap!important;overflow:visible!important;row-gap:4px}#scr-dex .filters>*{font-size:.88em}',
     '.menu-list [data-go="gacha"] small,.menu-list [data-go="goals"] small{display:block!important;font-size:.62em!important;opacity:.8;margin-top:4px;white-space:normal}',
