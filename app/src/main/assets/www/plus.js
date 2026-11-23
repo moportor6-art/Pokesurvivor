@@ -18,7 +18,7 @@
   var LS = 'psplus.';
   function load(k, d) { try { var v = localStorage.getItem(LS + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
   function save(k, v) { try { localStorage.setItem(LS + k, JSON.stringify(v)); } catch (e) { /* lleno */ } }
-  var cfg = Object.assign({ evo: true, berries: true, autoOrbs: true, sprint: true, meter: true, minimap: true, glow: false, fov: 1.15, endlessDefault: false }, load('cfg', {}));
+  var cfg = Object.assign({ power: true, evo: true, berries: true, autoOrbs: true, sprint: true, meter: true, minimap: true, glow: false, fov: 1.15, endlessDefault: false }, load('cfg', {}));
   function saveCfg() { save('cfg', cfg); }
   var failed = {};
   function safe(name, fn) {
@@ -307,6 +307,7 @@
     } else if (tab === 'opts') {
       var opt = function (k, t, d) { return '<button class="psp-opt" data-a="opt" data-k="' + k + '"><span class="sw' + (cfg[k] ? ' on' : '') + '"></span><span><b>' + t + '</b><small>' + d + '</small></span></button>'; };
       h += opt('evo', 'Próxima evolución', 'Junto a tu vida: a qué evoluciona y en qué nivel (▲ si no evoluciona: nivel en que se hace más fuerte).');
+      h += opt('power', 'Potencia en las cartas', 'Al aprender o mejorar un ataque: daño, golpes, recarga y daño por segundo (antes → después).');
       h += opt('sprint', 'Botón de correr', 'Acelerón de +60 % de velocidad 3 s cada 20 s (también con Mayús).');
       h += opt('autoOrbs', 'Esferas automáticas', 'Las esferas se usan solas: rodeado o con poca vida (Sopor, Ráfaga, Ralento), jefe cerca (Foco) o pantalla llena (Lumino).');
       h += opt('berries', 'Bayas de repuesto', 'Una baya igual a la que llevas se guarda (hasta 3) en vez de gastarse sin curar.');
@@ -415,6 +416,7 @@
     '.psp-badge.in{position:relative;right:auto;top:-1px;margin-left:6px;display:inline-block}.menu-list [data-go="goals"],#goals-tabs .tab{position:relative}',
     '.psp-claim{display:block;margin:-4px 0 4px auto}.psp-over{margin:8px 0;padding:8px 10px;border-radius:10px;background:rgba(95,224,138,.12);border:1px solid rgba(95,224,138,.45);text-align:center}',
     '.psp-over .l{font-size:13px;margin-bottom:6px}',
+    '.psp-pw{margin-top:3px;font-size:11px;line-height:1.3;color:#ffd9a0}.psp-pw b{color:#ffe14d}.psp-pw i{opacity:.75;font-style:normal}',
     // Pokédex para teléfono
     '#scr-dex .box.wide{overflow:hidden!important;display:flex!important;flex-direction:column;padding-top:8px!important;padding-bottom:8px!important;gap:5px}',
     '#scr-dex .box.wide>.row{flex:none;margin:0!important}#scr-dex .box.wide>.row h2{font-size:17px;margin:0;white-space:nowrap}#scr-dex .box.wide>.row .btn{padding-top:3px;padding-bottom:3px}',
@@ -706,6 +708,59 @@
     }
   });
 
+
+  // ─── Potencia en las cartas de movimientos ───
+  // Al aprender (subir de nivel, Quitamovimientos) sale la potencia del ataque: daño por golpe, golpes, recarga y
+  // daño por segundo. Al mejorar uno que ya tienes: antes → después. Es la potencia base del ataque; el daño real
+  // también sube con tu Ataque/At. Esp., tus mejoras y la eficacia de tipo.
+  var nameMap = null;
+  function moveMod() { return find(['BY_ID', 'instance', 'levelUp', 'nextUpText']); }
+  function movesByName() {
+    var Mv = moveMod(), B = window.PSLocal.game();
+    if (!Mv) return null;
+    if (!nameMap) {
+      nameMap = {};
+      for (var id in Mv.BY_ID) { var d = Mv.BY_ID[id]; if (d && d.name) { nameMap[d.name] = id; try { nameMap[B.T(d.name)] = id; } catch (e) { /* nada */ } } }
+    }
+    return nameMap;
+  }
+  function pw(m) { return { d: m.dmg || 0, n: m.count || 1, cd: m.cd || 1, p: m.pierce || 0, dps: (m.dmg || 0) * (m.count || 1) / (m.cd || 1) }; }
+  function n1(x) { return (Math.round(x * 100) / 100).toString().replace('.', ','); }
+  var cardPower = safe('Potencia en las cartas', function (pl) {
+    if (!cfg.power) return;
+    var Mv = moveMod(), map = movesByName();
+    if (!Mv || !map) return;
+    var cards = document.querySelectorAll('section.scr:not(.hidden) .card');
+    for (var i = 0; i < cards.length; i++) {
+      var c = cards[i], nm = c.querySelector('.nm');
+      if (!nm || c.dataset.pspPw === nm.textContent) continue;
+      c.dataset.pspPw = nm.textContent;
+      var old = c.querySelector('.psp-pw'); if (old) old.remove();
+      var title = (nm.firstChild && nm.firstChild.nodeType === 3 ? nm.firstChild.textContent : nm.textContent).trim().replace(/\s*\+$/, '');
+      var id = map[title];
+      if (!id || !Mv.BY_ID[id]) continue;
+      var def = Mv.BY_ID[id], own = null;
+      (pl && pl.moves || []).forEach(function (m) { if (m && m.id === id) own = m; });
+      var html = '';
+      if (!def.dmg) continue;   // de apoyo (Danza Espada…): ya dice que no hace daño
+      if (own && own.lvl < def.maxLvl && !/Nuevo|New/i.test(nm.textContent)) {
+        var a = pw(Mv.instance(id, own.lvl)), b = pw(Mv.instance(id, own.lvl + 1)), parts = [];
+        if (Math.abs(b.d - a.d) > 0.05) parts.push('Daño ' + Math.round(a.d) + ' → <b>' + Math.round(b.d) + '</b>');
+        if (b.n !== a.n) parts.push('Golpes ' + a.n + ' → <b>' + b.n + '</b>');
+        if (Math.abs(b.cd - a.cd) > 0.005) parts.push('Recarga ' + n1(a.cd) + ' s → <b>' + n1(b.cd) + ' s</b>');
+        if (b.p !== a.p) parts.push('Perfora ' + a.p + ' → <b>' + b.p + '</b>');
+        parts.push('Daño/s ' + Math.round(a.dps) + ' → <b>' + Math.round(b.dps) + '</b> (' + (b.dps >= a.dps ? '+' : '') + Math.round((b.dps / Math.max(0.01, a.dps) - 1) * 100) + ' %)');
+        html = 'Nv. ' + own.lvl + ' → ' + (own.lvl + 1) + ': ' + parts.join(' · ');
+      } else {
+        var x = pw(Mv.instance(id, 1));
+        html = 'Potencia ' + Math.round(x.d) + (x.n > 1 ? ' ×' + x.n : '') + ' · cada ' + n1(x.cd) + ' s' + (x.p ? ' · perfora ' + x.p : '') + ' · <b>' + Math.round(x.dps) + ' daño/s</b>';
+        if (own) html += ' <i>(Nv. ' + own.lvl + ' ahora: ' + Math.round(pw(own).dps) + ' daño/s)</i>';
+      }
+      var box = el('div', 'psp-pw', html);
+      (c.querySelector('.txt') || c).appendChild(box);
+    }
+  });
+
   window.PSPlus = { claimAll: claimAll, readyMissions: readyMissions, modules: M, spare: spare, sprint: sprint, failed: failed, endless: endless, cfg: cfg };   // para revisar desde las pruebas
 
   // ─── Bucle ───
@@ -722,6 +777,7 @@
     lastState = st;
     var inRun = (st === 'playing' || st === 'paused') && !!pl;
     if (inRun && st === 'playing') { sampleRun(pl); tickEndless(); applyFov(); }
+    cardPower(pl);
     if (pl) { hookBerries(pl); autoOrbs(pl); tickSprint(pl, inRun); drawSpare(inRun); drawEvo(pl, st === 'playing'); drawMeter(pl, st === 'playing'); drawMinimap(pl, st === 'playing'); drawGlow(pl, st === 'playing'); }
   });
   document.addEventListener('DOMContentLoaded', function () {
