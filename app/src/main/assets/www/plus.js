@@ -310,7 +310,7 @@
       h += opt('power', 'Potencia en las cartas', 'Al aprender o mejorar un ataque: daño, golpes, recarga y daño por segundo (antes → después).');
       h += opt('sprint', 'Botón de correr', 'Acelerón de +60 % de velocidad 3 s cada 20 s (también con Mayús).');
       h += opt('autoOrbs', 'Esferas automáticas', 'Las esferas se usan solas: rodeado o con poca vida (Sopor, Ráfaga, Ralento), jefe cerca (Foco) o pantalla llena (Lumino).');
-      h += opt('berries', 'Bayas de repuesto', 'Una baya igual a la que llevas se guarda (hasta 3) en vez de gastarse sin curar.');
+      h += opt('berries', 'Bayas de repuesto', 'Las bayas de vida que coges con la vida llena se guardan (hasta 5) y curan solas bajo el 35 %; una baya igual a la que llevas se guarda de repuesto (hasta 3).');
       h += opt('meter', 'Medidor de daño', 'Daño de cada movimiento y daño por segundo. Tócalo en partida para encogerlo.');
       h += opt('minimap', 'Minimapa', 'Enemigos (blanco), jefes (rojo), shinies (amarillo) y grietas (morado).');
       h += opt('glow', 'Brillo de poca vida', 'Bordes rojos y latido con menos del 20 % de vida (además del oscurecido del juego).');
@@ -515,8 +515,14 @@
   // El juego guarda una baya de cada clase; si coges otra igual, gasta la que tenías en ese momento (aunque tengas
   // la vida llena y no te cure nada). Aquí la de más se guarda de repuesto (hasta 3 de cada) y entra sola en cuanto
   // se gasta la que llevas, así que la próxima vez que bajes del 25 % te vuelve a curar.
-  var spare = {}, berryHooked = false;
-  var BERRY = { sitrus: ['Zidra', '#ffd23f'], atania: ['Atania', '#ff6f7d'], meloc: ['Meloc', '#7fd0ff'] };
+  var spare = {}, berryHooked = false, healing = false;
+  function useSpareHeal(pl) {
+    if (!cfg.berries || !spare.heal || !pl || pl.dead || !pl.maxHp || pl.hp / pl.maxHp >= 0.35 || M.G.state !== 'playing') return;
+    spare.heal--;
+    healing = true;
+    try { pl.heal(0.3 * pl.maxHp); window.PSLocal.game().FX.dmgText(pl.x, pl.y - pl.bodyH - 10, '¡Cura guardada!', '#5fe08a', true); } finally { healing = false; }
+  }
+  var BERRY = { heal: ['Curas', '#5fe08a'], sitrus: ['Zidra', '#ffd23f'], atania: ['Atania', '#ff6f7d'], meloc: ['Meloc', '#7fd0ff'] };
   var hookBerries = safe('Bayas de repuesto', function (pl) {
     if (berryHooked || !pl) return;
     var proto = Object.getPrototypeOf(pl), B = window.PSLocal.game(), T = B.Items && B.Items.TREAT;
@@ -530,6 +536,18 @@
         return;
       }
       return take.apply(this, arguments);
+    };
+    // Las bayas de vida del suelo (curan 30 %) con la vida casi llena se perdían: se guardan (hasta 5) y curan
+    // solas cuando bajas del 35 %.
+    var heal = proto.heal;
+    proto.heal = function (amt) {
+      if (cfg.berries && this === M.G.player && !this.dead && this.maxHp > 0 && Math.abs(amt - 0.3 * this.maxHp) < 1e-6
+          && this.hp / this.maxHp >= 0.85 && !healing && (spare.heal || 0) < 5) {
+        spare.heal = (spare.heal || 0) + 1;
+        try { B.FX.dmgText(this.x, this.y - this.bodyH - 10, 'Cura guardada ×' + spare.heal, '#5fe08a', true); } catch (e) { /* nada */ }
+        return;
+      }
+      return heal.apply(this, arguments);
     };
     proto.useBerry = function (j) {
       var had = this.berries && this.berries[j];
@@ -778,7 +796,7 @@
     var inRun = (st === 'playing' || st === 'paused') && !!pl;
     if (inRun && st === 'playing') { sampleRun(pl); tickEndless(); applyFov(); }
     cardPower(pl);
-    if (pl) { hookBerries(pl); autoOrbs(pl); tickSprint(pl, inRun); drawSpare(inRun); drawEvo(pl, st === 'playing'); drawMeter(pl, st === 'playing'); drawMinimap(pl, st === 'playing'); drawGlow(pl, st === 'playing'); }
+    if (pl) { hookBerries(pl); useSpareHeal(pl); autoOrbs(pl); tickSprint(pl, inRun); drawSpare(inRun); drawEvo(pl, st === 'playing'); drawMeter(pl, st === 'playing'); drawMinimap(pl, st === 'playing'); drawGlow(pl, st === 'playing'); }
   });
   document.addEventListener('DOMContentLoaded', function () {
     var s = document.createElement('style');
