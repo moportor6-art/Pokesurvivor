@@ -18,7 +18,7 @@
   var LS = 'psplus.';
   function load(k, d) { try { var v = localStorage.getItem(LS + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
   function save(k, v) { try { localStorage.setItem(LS + k, JSON.stringify(v)); } catch (e) { /* lleno */ } }
-  var cfg = Object.assign({ meter: true, minimap: true, glow: false, fov: 1.15, endlessDefault: false }, load('cfg', {}));
+  var cfg = Object.assign({ evo: true, meter: true, minimap: true, glow: false, fov: 1.15, endlessDefault: false }, load('cfg', {}));
   function saveCfg() { save('cfg', cfg); }
   var failed = {};
   function safe(name, fn) {
@@ -304,6 +304,7 @@
       });
     } else if (tab === 'opts') {
       var opt = function (k, t, d) { return '<button class="psp-opt" data-a="opt" data-k="' + k + '"><span class="sw' + (cfg[k] ? ' on' : '') + '"></span><span><b>' + t + '</b><small>' + d + '</small></span></button>'; };
+      h += opt('evo', 'Próxima evolución', 'Junto a tu vida: a qué evoluciona y en qué nivel (▲ si no evoluciona: nivel en que se hace más fuerte).');
       h += opt('meter', 'Medidor de daño', 'Daño de cada movimiento y daño por segundo. Tócalo en partida para encogerlo.');
       h += opt('minimap', 'Minimapa', 'Enemigos (blanco), jefes (rojo), shinies (amarillo) y grietas (morado).');
       h += opt('glow', 'Brillo de poca vida', 'Bordes rojos y latido con menos del 20 % de vida (además del oscurecido del juego).');
@@ -397,6 +398,10 @@
     '.psp-opt small,.psp-fov small{display:block;opacity:.75;font-size:11px;margin-top:2px}',
     '.psp-opt .sw{flex:none;width:38px;height:22px;border-radius:11px;background:#3a4470;position:relative}.psp-opt .sw:after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#cfd8ff;transition:left .15s}',
     '.psp-opt .sw.on{background:#5fd35f}.psp-opt .sw.on:after{left:19px;background:#fff}.psp-fov{padding:8px;margin-bottom:8px}.psp-fov div{display:flex;gap:6px;margin-top:6px}',
+    '.psp-evo{position:fixed;left:calc(max(8px,env(safe-area-inset-left)) + 238px);top:14px;z-index:40;display:flex;align-items:center;gap:4px;padding:2px 8px 6px 6px;border-radius:10px;background:rgba(10,16,40,.55);color:#ffd23f;font-size:12px;pointer-events:none;position:fixed}',
+    '.psp-evo .ar{color:#cfd8ff;font-size:12px}.psp-evo img{width:30px;height:30px;image-rendering:pixelated;border-radius:6px;background:rgba(255,255,255,.08)}',
+    '.psp-evo .q{width:30px;height:30px;display:grid;place-items:center;border-radius:6px;background:rgba(255,255,255,.1);color:#fff;font-weight:bold;font-size:16px}.psp-evo .q.up{color:#5fe08a;font-size:13px}',
+    '.psp-evo i{position:absolute;left:8px;right:8px;bottom:2px;height:3px;border-radius:2px;background:rgba(255,255,255,.15)}.psp-evo i u{display:block;height:100%;width:0;border-radius:2px;background:#ffd23f;text-decoration:none}.psp-evo.grow i u{background:#5fe08a}',
     // Pokédex para teléfono
     '#scr-dex .box.wide{overflow:hidden!important;display:flex!important;flex-direction:column;padding-top:8px!important;padding-bottom:8px!important;gap:5px}',
     '#scr-dex .box.wide>.row{flex:none;margin:0!important}#scr-dex .box.wide>.row h2{font-size:17px;margin:0;white-space:nowrap}#scr-dex .box.wide>.row .btn{padding-top:3px;padding-bottom:3px}',
@@ -459,6 +464,37 @@
     if (btn.dataset.l !== label) { btn.dataset.l = label; btn.innerHTML = '<span>' + label + '</span>'; btn.classList.toggle('gold', on.length > 0); }
   });
 
+
+  // ─── Próxima evolución junto al HUD (como en PokéBonk) ───
+  // Al lado de la vida: flecha, retrato de la evolución (o «?» si hay varias, como Eevee) y el nivel en que llega.
+  // Si no evoluciona, dice en qué nivel se hace más fuerte; al final, nada.
+  var evoBox = null, evoKey = '';
+  var drawEvo = safe('Próxima evolución', function (pl, inRun) {
+    var B = window.PSLocal && window.PSLocal.game(), V = B && find(['LEVELS', 'stageAt', 'line', 'preview']);
+    if (!evoBox) { evoBox = el('div', 'psp-evo'); document.body.appendChild(evoBox); }
+    var ev = pl.evo;
+    if (!cfg.evo || !inRun || !V || !ev || ev.stage >= V.LEVELS.length || M.J.active) { evoBox.style.display = 'none'; return; }
+    var lvl = V.LEVELS[ev.stage], opts = V.next(pl.dex) || [], data = B._07d519e || find(['setSprite', 'looks', 'data']);
+    var dexOf = function (id) { var f = B._e26a824 && B._e26a824[id]; return f && f.dex ? f.dex : id; };
+    var key = pl.dex + ':' + ev.stage + ':' + lvl + ':' + opts.join(',') + ':' + (pl.shiny ? 1 : 0);
+    if (key !== evoKey) {
+      evoKey = key;
+      var html = '<span class="ar">➜</span>';
+      if (opts.length === 1) {
+        var d = dexOf(opts[0]);
+        html += '<img src="assets/tienda/fotos-perfil/' + d + '/' + (pl.shiny ? 's/' : '') + 'normal.png" onerror="this.onerror=null;this.src=\'assets/tienda/fotos-perfil/' + d + '/normal.png\'">';
+        try { evoBox.title = 'Evoluciona a ' + (B.T ? B.T(data.data(opts[0]).name) : data.data(opts[0]).name) + ' en el Nv. ' + lvl; } catch (e) { /* sin nombre */ }
+      } else if (opts.length > 1) html += '<span class="q">?</span>';
+      else html += '<span class="q up">▲</span>';
+      html += '<b>Nv. ' + lvl + '</b><i><u></u></i>';
+      evoBox.innerHTML = html;
+      evoBox.classList.toggle('grow', !opts.length);
+    }
+    var prev = ev.stage > 0 ? V.LEVELS[ev.stage - 1] : 1, k = Math.max(0, Math.min(1, (pl.level - prev + (pl.xpNext ? pl.xp / pl.xpNext : 0)) / Math.max(1, lvl - prev)));
+    var bar = evoBox.querySelector('u'); if (bar) bar.style.width = Math.round(k * 100) + '%';
+    evoBox.style.display = '';
+  });
+
   window.PSPlus = { modules: M, failed: failed, endless: endless, cfg: cfg };   // para revisar desde las pruebas
 
   // ─── Bucle ───
@@ -474,7 +510,7 @@
     lastState = st;
     var inRun = (st === 'playing' || st === 'paused') && !!pl;
     if (inRun && st === 'playing') { sampleRun(pl); tickEndless(); applyFov(); }
-    if (pl) { drawMeter(pl, st === 'playing'); drawMinimap(pl, st === 'playing'); drawGlow(pl, st === 'playing'); }
+    if (pl) { drawEvo(pl, st === 'playing'); drawMeter(pl, st === 'playing'); drawMinimap(pl, st === 'playing'); drawGlow(pl, st === 'playing'); }
   });
   document.addEventListener('DOMContentLoaded', function () {
     var s = document.createElement('style');
