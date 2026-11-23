@@ -198,6 +198,7 @@
     endless.nextBoss = 0;
     endless.cut = false;
     spare = {}; if (window.PSPlus) window.PSPlus.spare = spare;
+    try { var sv0 = saveObj(); achAtStart = sv0 && sv0.ach ? Object.keys(sv0.ach) : []; } catch (e) { achAtStart = null; }
     dmgHist = [];
     run = { at: Date.now(), dex: pl.dex, shiny: !!pl.shiny, name: (pl.mon && (pl.mon.name || pl.mon.n)) || '', endless: endless.on, series: [], lastS: 0 };
   }
@@ -410,6 +411,10 @@
     '.psp-sprint{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:84px;z-index:41;width:64px;height:64px;border-radius:50%;border:3px solid #ffb24d;color:#fff;font:inherit;font-size:11px;padding:0;touch-action:none;',
     'background:conic-gradient(rgba(255,178,77,.55) calc(var(--f,100)*1%),rgba(10,16,40,.7) 0);opacity:.7}',
     '.psp-sprint.ready{opacity:1;box-shadow:0 0 12px rgba(255,178,77,.7)}.psp-sprint.active{background:#ffb24d;color:#1a1030}.psp-sprint b{pointer-events:none}',
+    '.psp-badge{position:absolute;right:6px;top:6px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#ff3b4e;color:#fff;font-size:11px;line-height:18px;font-weight:bold;text-align:center;box-shadow:0 0 0 2px #1c2a66}',
+    '.psp-badge.in{position:relative;right:auto;top:-1px;margin-left:6px;display:inline-block}.menu-list [data-go="goals"],#goals-tabs .tab{position:relative}',
+    '.psp-claim{display:block;margin:-4px 0 4px auto}.psp-over{margin:8px 0;padding:8px 10px;border-radius:10px;background:rgba(95,224,138,.12);border:1px solid rgba(95,224,138,.45);text-align:center}',
+    '.psp-over .l{font-size:13px;margin-bottom:6px}',
     // Pokédex para teléfono
     '#scr-dex .box.wide{overflow:hidden!important;display:flex!important;flex-direction:column;padding-top:8px!important;padding-bottom:8px!important;gap:5px}',
     '#scr-dex .box.wide>.row{flex:none;margin:0!important}#scr-dex .box.wide>.row h2{font-size:17px;margin:0;white-space:nowrap}#scr-dex .box.wide>.row .btn{padding-top:3px;padding-bottom:3px}',
@@ -615,7 +620,93 @@
     spareBox.style.display = html ? '' : 'none';
   });
 
-  window.PSPlus = { modules: M, spare: spare, sprint: sprint, failed: failed, endless: endless, cfg: cfg };   // para revisar desde las pruebas
+
+  // ─── Cobrar todo (como en DB Survivors) ───
+  // Al acabar la partida y en Misiones: un botón cobra de golpe todas las misiones completadas; los logros nuevos
+  // de la partida se listan (el juego ya los paga al momento). En el menú, Misiones lleva un aviso rojo con cuántas hay.
+  var achAtStart = null;
+  function questMod() { return find(['pending', 'claim', 'checkAch', 'grant']); }
+  function saveObj() { var B = window.PSLocal.game(), S = B && B._8a4e40d; if (S && S.save) return S.save; var m = find(['register', 'login', 'commit']); return m && m.save; }
+  function readyMissions() {
+    var sv = saveObj(), Q = questMod();
+    if (!sv || !sv.missions || !Q) return [];
+    var out = [];
+    (sv.missions.daily || []).forEach(function (m) { if (Q.done(m) && !m.claimed) out.push([m, false]); });
+    (sv.missions.weekly || []).forEach(function (m) { if (Q.done(m) && !m.claimed) out.push([m, true]); });
+    return out;
+  }
+  function claimAll() {
+    var Q = questMod(), sv = saveObj(), list = readyMissions();
+    if (!Q || !list.length) return null;
+    var t = sv.tickets || {}, before = { c: sv.coins || 0, t1: t.t1 || 0, t10: t.t10 || 0 }, n = 0;
+    list.forEach(function (x) { try { if (Q.claim(x[0], x[1])) n++; } catch (e) { /* sigue con las demás */ } });
+    var t2 = sv.tickets || {}, got = { n: n, c: (sv.coins || 0) - before.c, t1: (t2.t1 || 0) - before.t1, t10: (t2.t10 || 0) - before.t10 };
+    var B = window.PSLocal.game();
+    try { B.UI.refreshCoins(); } catch (e) { /* nada */ }
+    toast('¡Cobrado! ' + n + (n === 1 ? ' misión' : ' misiones') + ': ' + [got.c ? got.c + ' monedas' : '', got.t1 ? got.t1 + ' tickets' : '', got.t10 ? got.t10 + ' tickets ×10' : ''].filter(Boolean).join(', '), '#5fe08a');
+    return got;
+  }
+  function achNames(ids) {
+    var B = window.PSLocal.game(), list = (B._4600659 && B._4600659.LIST) || [];
+    var by = {}; list.forEach(function (a) { by[a.id] = a; });
+    return ids.map(function (id) { var a = by[id]; return a ? (B.T ? B.T(a.name) : a.name) : id; });
+  }
+  var hookRewards = safe('Cobrar todo', function () {
+    var n = readyMissions().length;
+    // Aviso en el menú
+    var tile = $('.menu-list [data-go="goals"]');
+    if (tile) {
+      var b = tile.querySelector('.psp-badge');
+      if (!b) { b = el('span', 'psp-badge'); tile.appendChild(b); }
+      b.textContent = n ? String(n) : '';
+      b.style.display = n ? '' : 'none';
+    }
+    var tab = $('#goals-tabs [data-tab="missions"]');
+    if (tab) {
+      var tb = tab.querySelector('.psp-badge');
+      if (!tb) { tb = el('span', 'psp-badge in'); tab.appendChild(tb); }
+      tb.textContent = n ? String(n) : '';
+      tb.style.display = n ? '' : 'none';
+    }
+    // Botón en Misiones
+    var body = document.getElementById('goals-body');
+    if (body && visible('scr-goals')) {
+      var bt = body.querySelector('.psp-claim');
+      if (n && !bt) {
+        bt = el('button', 'btn gold psp-claim', 'Cobrar todo (' + n + ')');
+        bt.addEventListener('click', function () { claimAll(); var t = $('#goals-tabs .tab.on'); if (t) t.click(); });
+        body.insertBefore(bt, body.firstChild);
+      } else if (bt && !n) bt.remove();
+      else if (bt && bt.textContent !== 'Cobrar todo (' + n + ')') bt.textContent = 'Cobrar todo (' + n + ')';
+    }
+    // Fin de partida
+    var overScr = document.getElementById('scr-over');
+    if (overScr && visible('scr-over')) {
+      var box = overScr.querySelector('.psp-over');
+      if (!box) {   // en la columna de botones, justo debajo de «Volver a jugar»
+        box = el('div', 'psp-over');
+        var again = document.getElementById('over-again'), back = document.getElementById('over-back');
+        if (again && again.parentNode) again.parentNode.insertBefore(box, again.nextSibling);
+        else if (back && back.parentNode) back.parentNode.insertBefore(box, back);
+        else (overScr.querySelector('.box') || overScr).appendChild(box);
+      }
+      var sv = saveObj(), nowAch = sv && sv.ach ? Object.keys(sv.ach) : [];
+      var fresh = achAtStart ? nowAch.filter(function (id) { return achAtStart.indexOf(id) < 0; }) : [];
+      var key = n + '|' + fresh.join(',');
+      if (box.dataset.k !== key) {
+        box.dataset.k = key;
+        var h = '';
+        if (fresh.length) h += '<div class="l">🏅 Logros nuevos (ya cobrados): ' + achNames(fresh).join(', ') + '</div>';
+        if (n) h += '<div class="l">✔ ' + n + (n === 1 ? ' misión lista para cobrar' : ' misiones listas para cobrar') + '</div><button class="btn gold psp-claim2">Cobrar todo</button>';
+        box.innerHTML = h;
+        box.style.display = h ? '' : 'none';
+        var c2 = box.querySelector('.psp-claim2');
+        if (c2) c2.addEventListener('click', function () { claimAll(); box.dataset.k = ''; });
+      }
+    }
+  });
+
+  window.PSPlus = { claimAll: claimAll, readyMissions: readyMissions, modules: M, spare: spare, sprint: sprint, failed: failed, endless: endless, cfg: cfg };   // para revisar desde las pruebas
 
   // ─── Bucle ───
   var lastState = '';
@@ -623,6 +714,7 @@
     if (!modules()) return;
     hookEndless();
     hookUi();
+    hookRewards();
     hookDex();
     var st = M.G.state, pl = M.G.player;
     if (st === 'playing' && lastState !== 'playing' && lastState !== 'paused') { startRun(); applyFov(); }
