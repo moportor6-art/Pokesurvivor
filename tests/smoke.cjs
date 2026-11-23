@@ -94,6 +94,19 @@ const fail = [];
   const inRun = await page.evaluate(() => ({ meter: !!document.querySelector('.psp-meter'), mm: !!document.querySelector('.psp-mm'), failed: Object.keys(window.PSPlus.failed) }));
   if (!inRun.meter || !inRun.mm) fail.push('Plus: falta el medidor de daño o el minimapa en partida');
   if (inRun.failed.length) fail.push('Plus apagado en partida: ' + inRun.failed.join(', '));
+  // Si justo salió una pantalla de elegir (subir de nivel, evolución...), elegir hasta volver a la partida
+  for (let i = 0; i < 6; i++) {
+    const open = await page.evaluate(() => {
+      const scr = [...document.querySelectorAll('section.scr')].filter(s => !s.classList.contains('hidden') && getComputedStyle(s).display !== 'none');
+      const top = scr[scr.length - 1];
+      if (!top) return false;
+      const b = [...top.querySelectorAll('.card,button')].find(x => x.offsetParent);
+      if (b) b.click();
+      return true;
+    });
+    if (!open) break;
+    await sleep(700);
+  }
   const back = await page.evaluate(() => window.psBack && psBack());
   await sleep(800);
   if (back !== 'paused' || !await visible('scr-pause')) fail.push('Atrás en partida no pausó (' + back + ')');
