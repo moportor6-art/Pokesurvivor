@@ -16,6 +16,11 @@ gritos, huevos, arenas, marcos, fotos de perfil y las páginas de guía/Pokédex
   Si algo nuevo no arranca, vuelve sola a la versión anterior. En *Ajustes → Acerca de → Actualizaciones* se puede buscar a mano
   o volver a lo que trae la APK.
 - **Al día con la web**: cada día GitHub mira pokesurvivor.com; si hay algo nuevo lo baja, lo prueba y publica una versión.
+- **Plus (local)**: ideas de [PokeSurvivor Plus](https://github.com/PokeSurvivorPlus/PokeSurvivorPlus) rehechas para esta versión
+  y para el teléfono (`www/plus.js`): **∞ Sin fin** (sin Juicio a los 30:00, hordas cada vez más duras y jefes cada 4 min;
+  «Invocar a Arceus» en la pausa), **medidor de daño** por movimiento, **minimapa**, **campo de visión** más amplio,
+  **historial de partidas** con gráfica de daño y **récords por Pokémon**. Se configura tocando las estadísticas del menú.
+  Si una actualización del juego rompe alguna mejora, esa se apaga sola y el juego sigue normal.
 - Atrás de Android: en partida pausa, en una ventana la cierra y en el menú pregunta antes de salir.
 
 No disponible sin servidor: amigos/salas online, clasificación online y vincular Google (se esconden).
@@ -48,5 +53,6 @@ Compilar en la PC: abrir la carpeta en Android Studio, o `./gradlew assembleRele
 ## Créditos
 
 Juego, diseño y código: **JPTER78** (pokesurvivor.com). Proyecto fan sin ánimo de lucro.
+Ideas de mejoras: PokeSurvivor Plus (licencia MIT), rehechas desde cero para esta versión.
 Sprites y retratos: [PMD SpriteCollab](https://github.com/PMDCollab/SpriteCollab) (CC BY-NC 4.0) y sus artistas, según los créditos del juego.
 Pokémon © Nintendo / Creatures / GAME FREAK. Este port no tiene relación con ellos y no concede permisos adicionales sobre recursos ajenos.

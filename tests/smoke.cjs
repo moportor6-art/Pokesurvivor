@@ -71,6 +71,11 @@ const fail = [];
     .every(s => { const e = document.querySelector(s); return !e || getComputedStyle(e).display === 'none'; }));
   if (!hiddenOk) fail.push('se ve algo que necesita internet (amigos, clasificación, enlaces)');
 
+  // Plus: botón Sin fin en el menú y ninguna mejora apagada
+  const plus = await page.evaluate(() => ({ btn: !!document.querySelector('.psp-endless'), failed: window.PSPlus ? Object.keys(window.PSPlus.failed) : ['no cargó plus.js'] }));
+  if (!plus.btn) fail.push('Plus: no apareció el botón ∞ Sin fin');
+  if (plus.failed.length) fail.push('Plus apagado en: ' + plus.failed.join(', '));
+
   // Una partida: mover en círculos ~25 s
   await page.click('#scr-menu [data-go="play"]');
   await sleep(2500);
@@ -86,6 +91,9 @@ const fail = [];
     });
   }
   await shot('4-partida');
+  const inRun = await page.evaluate(() => ({ meter: !!document.querySelector('.psp-meter'), mm: !!document.querySelector('.psp-mm'), failed: Object.keys(window.PSPlus.failed) }));
+  if (!inRun.meter || !inRun.mm) fail.push('Plus: falta el medidor de daño o el minimapa en partida');
+  if (inRun.failed.length) fail.push('Plus apagado en partida: ' + inRun.failed.join(', '));
   const back = await page.evaluate(() => window.psBack && psBack());
   await sleep(800);
   if (back !== 'paused' || !await visible('scr-pause')) fail.push('Atrás en partida no pausó (' + back + ')');

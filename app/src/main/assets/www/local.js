@@ -59,6 +59,7 @@
     }
     return null;
   }
+  window.PSLocal = { game: game };   // para plus.js (mejoras al estilo PokeSurvivor Plus)
   function saves(G) {   // el módulo de partidas: el que tiene register/login/commit
     for (var k in G) {
       var v = G[k];
@@ -155,7 +156,12 @@
     // Gacha y Misiones (que quedaron más grandes) muestran su descripción
     '#scr-menu{grid-template-columns:minmax(0,1fr) 250px!important}',
     '#scr-menu .menu-right,#scr-menu .menu-right>.box{width:auto!important;max-width:none!important;justify-self:stretch!important}',
-    '.menu-list>*:not([data-go="play"]){font-size:1.18em!important}',
+    '.menu-list>*:not([data-go="play"]):not([data-go="mastery"]):not([data-go="profile"]):not(.menu-modes):not([data-go="chal"]){font-size:1.18em!important}',
+    '.menu-list [data-go="mastery"],.menu-list [data-go="profile"]{white-space:nowrap;overflow:hidden;font-size:.95em}',
+    // nombre en la barra de arriba: el ancho se ajusta al nombre (corto = pastilla chica, largo = más grande)
+    '#user-pill{max-width:min(46vw,320px)!important;width:auto!important;min-width:0!important}#user-pill span{max-width:none!important;overflow:visible!important;text-overflow:clip!important;white-space:nowrap}',
+    // Pokémon: los filtros y el orden bajan a otra línea en vez de cortarse
+    '#scr-dex .filters{flex-wrap:wrap!important;overflow:visible!important;row-gap:4px}#scr-dex .filters>*{font-size:.88em}',
     '.menu-list [data-go="gacha"] small,.menu-list [data-go="goals"] small{display:block!important;font-size:.62em!important;opacity:.8;margin-top:4px;white-space:normal}',
     '#scr-login .tabs,#scr-login #f-pass,#scr-login label[for="f-pass"]{display:none!important}',
     '#scr-login.ps-local .ps-local-note{margin:4px 0 10px;color:#ffd23f;font-size:.85em;line-height:1.35}',
@@ -205,6 +211,7 @@
 
   // ─── 7. Atrás de Android (lo llama la app) ───
   window.psBack = function () {
+    if (window.psPlusClose && window.psPlusClose()) return 'closed';   // panel Plus abierto: cerrarlo
     var open = Array.prototype.filter.call(document.querySelectorAll('section.scr'), function (s) {
       return !s.classList.contains('hidden') && !s.hidden && getComputedStyle(s).display !== 'none';
     });
