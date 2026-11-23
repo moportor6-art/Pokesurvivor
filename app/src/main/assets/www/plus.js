@@ -197,7 +197,7 @@
     endless.armed = false;
     endless.nextBoss = 0;
     endless.cut = false;
-    spare = {}; if (window.PSPlus) window.PSPlus.spare = spare;
+    spare = {}; healStock = 0; if (window.PSPlus) window.PSPlus.spare = spare;
     try { var sv0 = saveObj(); achAtStart = sv0 && sv0.ach ? Object.keys(sv0.ach) : []; } catch (e) { achAtStart = null; }
     dmgHist = [];
     run = { at: Date.now(), dex: pl.dex, shiny: !!pl.shiny, name: (pl.mon && (pl.mon.name || pl.mon.n)) || '', endless: endless.on, series: [], lastS: 0 };
@@ -513,7 +513,7 @@
 
   // ─── Bayas de repuesto ───
   // El juego guarda una baya de cada clase; si coges otra igual, gasta la que tenías en ese momento (aunque tengas
-  // la vida llena y no te cure nada). Aquí la de más se guarda de repuesto (hasta 3 de cada) y entra sola en cuanto
+  // la vida llena y no te cure nada). Aquí la de más se guarda de repuesto (sin límite) y entra sola en cuanto
   // se gasta la que llevas, así que la próxima vez que bajes del 25 % te vuelve a curar.
   var spare = {}, berryHooked = false, healing = false;
   function useSpareHeal(pl) {
@@ -530,7 +530,7 @@
     berryHooked = true;
     var take = proto.takeTreat, use = proto.useBerry;
     proto.takeTreat = function (j) {
-      if (cfg.berries && this === M.G.player && T[j] && T[j].berry && this.berries && this.berries[j] && (spare[j] || 0) < 3) {
+      if (cfg.berries && this === M.G.player && T[j] && T[j].berry && this.berries && this.berries[j]) {
         spare[j] = (spare[j] || 0) + 1;
         try { B.FX.dmgText(this.x, this.y - this.bodyH - 10, 'Baya ' + (BERRY[j] ? BERRY[j][0] : '') + ' de repuesto ×' + spare[j], '#9ff0c0', true); } catch (e) { /* nada */ }
         return;
@@ -555,6 +555,38 @@
       if (had && this === M.G.player && this.berries && !this.berries[j] && spare[j] > 0) { spare[j]--; this.berries[j] = true; }
       return r;
     };
+  });
+
+
+  // ─── Bayas curativas del suelo guardadas ───
+  // Las bayas verdes que sueltan los enemigos curan un 30 % al momento: con la vida casi llena se perdían.
+  // Ahora, si no te hacen falta, se guardan (sin límite) y se comen solas al bajar del 40 % de vida.
+  var healStock = 0, healT = 0, pickHooked = false;
+  var hookPickups = safe('Bayas curativas guardadas', function () {
+    if (pickHooked) return;
+    var P = find(['dropXp', 'pullAll', 'promote', 'removeId']);
+    if (!P || typeof P.update !== 'function') return;
+    pickHooked = true;
+    var up = P.update;
+    P.update = function (dt, players, onTake) {
+      if (typeof onTake !== 'function') return up.apply(this, arguments);
+      return up.call(this, dt, players, function (it, who) {
+        if (cfg.berries && it && it.kind === 'heal' && who && M.G && who === M.G.player && !who.dead && who.hp >= who.maxHp * 0.95) {
+          healStock++;
+          try { window.PSLocal.game().FX.dmgText(who.x, who.y - who.bodyH - 10, 'Baya guardada ×' + healStock, '#5fe08a', true); } catch (e) { /* nada */ }
+          return;
+        }
+        return onTake.apply(this, arguments);
+      });
+    };
+  });
+  var eatStock = safe('Bayas curativas (usar)', function (pl) {
+    if (!cfg.berries || !healStock || !pl || pl.dead || M.G.state !== 'playing') return;
+    var t = M.G.time;
+    if (t - healT < 1 || pl.hp >= pl.maxHp * 0.4) return;
+    healT = t; healStock--;
+    pl.heal(pl.maxHp * 0.3);
+    try { var B = window.PSLocal.game(); B.FX.ring(pl.x, pl.y, 6, 60, '#5fe08a', 0.4, 3); B.FX.dmgText(pl.x, pl.y - pl.bodyH - 10, '¡Baya! +30 %', '#5fe08a', true); } catch (e) { /* nada */ }
   });
 
   // ─── Esferas automáticas ───
@@ -635,6 +667,7 @@
   var drawSpare = safe('Bayas de repuesto (vista)', function (inRun) {
     if (!spareBox) { spareBox = el('div', 'psp-spare'); document.body.appendChild(spareBox); }
     var html = '';
+    if (cfg.berries && inRun && healStock) html += '<span style="color:#5fe08a">● Bayas ×' + healStock + '</span>';
     if (cfg.berries && inRun) for (var j in spare) if (spare[j] > 0) html += '<span style="color:' + (BERRY[j] ? BERRY[j][1] : '#fff') + '">● ' + (BERRY[j] ? BERRY[j][0] : j) + ' +' + spare[j] + '</span>';
     if (spareBox.innerHTML !== html) spareBox.innerHTML = html;
     spareBox.style.display = html ? '' : 'none';
@@ -779,7 +812,7 @@
     }
   });
 
-  window.PSPlus = { claimAll: claimAll, readyMissions: readyMissions, modules: M, spare: spare, sprint: sprint, failed: failed, endless: endless, cfg: cfg };   // para revisar desde las pruebas
+  window.PSPlus = { stock: function () { return healStock; }, claimAll: claimAll, readyMissions: readyMissions, modules: M, spare: spare, sprint: sprint, failed: failed, endless: endless, cfg: cfg };   // para revisar desde las pruebas
 
   // ─── Bucle ───
   var lastState = '';
@@ -796,7 +829,8 @@
     var inRun = (st === 'playing' || st === 'paused') && !!pl;
     if (inRun && st === 'playing') { sampleRun(pl); tickEndless(); applyFov(); }
     cardPower(pl);
-    if (pl) { hookBerries(pl); useSpareHeal(pl); autoOrbs(pl); tickSprint(pl, inRun); drawSpare(inRun); drawEvo(pl, st === 'playing'); drawMeter(pl, st === 'playing'); drawMinimap(pl, st === 'playing'); drawGlow(pl, st === 'playing'); }
+    hookPickups();
+    if (pl) { hookBerries(pl); eatStock(pl); useSpareHeal(pl); autoOrbs(pl); tickSprint(pl, inRun); drawSpare(inRun); drawEvo(pl, st === 'playing'); drawMeter(pl, st === 'playing'); drawMinimap(pl, st === 'playing'); drawGlow(pl, st === 'playing'); }
   });
   document.addEventListener('DOMContentLoaded', function () {
     var s = document.createElement('style');
