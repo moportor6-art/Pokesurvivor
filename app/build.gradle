@@ -1,0 +1,52 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Número de compilación: lo pasa GitHub Actions (-Pvc=<número de ejecución>); en local, 1.
+// El actualizador de la app compara este número con el de la última publicación.
+def buildNum = (project.findProperty('vc') ?: '1') as Integer
+// Versión visible (0.2, 0.3…): se sube a mano cuando hay cambios grandes en la app
+def version = '0.2'
+
+android {
+    namespace 'com.moportor6.pokesurvivor'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.moportor6.pokesurvivor'
+        minSdk 24
+        targetSdk 35
+        versionCode buildNum
+        versionName "${version} (build ${buildNum})"
+    }
+
+    // Clave de firma fija: cada versión se instala encima de la anterior sin desinstalar.
+    signingConfigs {
+        fija {
+            storeFile file('release.keystore')
+            storePassword 'pokesurvivor-offline'
+            keyAlias 'pokesurvivor'
+            keyPassword 'pokesurvivor-offline'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.fija
+        }
+        debug {
+            signingConfig signingConfigs.fija
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // Los png/mp3/jpg ya vienen comprimidos; no recomprimirlos
+    androidResources {
+        noCompress 'mp3', 'png', 'jpg', 'ttf'
+    }
+}

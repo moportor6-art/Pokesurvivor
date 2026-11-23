@@ -1,0 +1,48 @@
+name: PokéSurvivor al día
+
+# Todos los días mira pokesurvivor.com; si hay algo nuevo (código, Pokémon, sprites, skins, fotos...), lo baja,
+# lo sube al repositorio y compila. La app lo recibe sola con el actualizador (solo baja lo que cambió).
+on:
+  schedule:
+    - cron: '37 9 * * *'   # 3:37 en México
+  workflow_dispatch:
+    inputs:
+      horas:
+        description: 'Horas máximas de descarga en esta pasada'
+        default: '5'
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: actualizar
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Herramientas
+        run: |
+          pip install --quiet requests
+          cd tools/web && npm install --no-save --no-package-lock playwright@1.63.0
+      - name: Bajar lo nuevo de pokesurvivor.com
+        run: python3 -I tools/web/actualizar.py --ritmo 8 --max-horas ${{ github.event.inputs.horas || '5' }}
+      - name: Subir si cambió y compilar
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; then echo "PokéSurvivor ya estaba al día"; exit 0; fi
+          git config user.name "moportor6-art"
+          git config user.email "moportor6-art@users.noreply.github.com"
+          git add -A app/src/main/assets/www tools/web/estado.json
+          V=$(python3 -c "import json;print(json.load(open('app/src/main/assets/www/version.json')).get('v',''))")
+          git commit -m "PokéSurvivor al día ($(date -u +%Y-%m-%d), versión del sitio $V)"
+          git push origin HEAD:main
+          gh workflow run build-apk.yml --ref main

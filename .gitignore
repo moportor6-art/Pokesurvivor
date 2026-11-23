@@ -1,9 +1,10 @@
-android/.gradle/
-android/**/build/
-android/local.properties
-android/app/src/main/assets/
+.gradle/
 build/
-*.jks
-*.keystore
-__pycache__/
+app/build/
+local.properties
 node_modules/
+tools/web/node_modules/
+capturas/
+*.part
+__pycache__/
+app/src/main/assets/contenido-base.json

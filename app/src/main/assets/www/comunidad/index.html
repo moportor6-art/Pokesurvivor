@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com https://challenges.cloudflare.com; connect-src 'self' https://ice.pokesurvivor.com https://*.googleapis.com https://challenges.cloudflare.com http://127.0.0.1:* http://localhost:*; img-src 'self' data: https://i.imgur.com https://cdn.discordapp.com https://media.discordapp.net https://i.ibb.co https://i.postimg.cc https://i.gyazo.com https://i.ytimg.com https://pokesurvivor.com; style-src 'self' 'unsafe-inline'; font-src 'self'; frame-src https://challenges.cloudflare.com https://pokesurvivor-free.firebaseapp.com https://apis.google.com https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Comunidad de PokéSurvivor</title>
+<meta name="description" content="Foro, builds, sugerencias y wiki de los jugadores de PokéSurvivor. Participa, sube de rango y gana tickets del gacha.">
+<link rel="canonical" href="https://pokesurvivor.com/comunidad/">
+<meta name="theme-color" content="#0a1430">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PokéSurvivor">
+<meta property="og:url" content="https://pokesurvivor.com/comunidad/">
+<meta property="og:title" content="Comunidad de PokéSurvivor">
+<meta property="og:description" content="Foro, builds, sugerencias y wiki de los jugadores de PokéSurvivor.">
+<meta property="og:image" content="https://pokesurvivor.com/assets/og-image.jpg">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="48x48" href="../assets/icons/icon-48.png">
+<link rel="apple-touch-icon" href="../assets/icons/icon-180.png">
+<link rel="preconnect" href="https://ice.pokesurvivor.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com">
+<link rel="preload" href="https://ice.pokesurvivor.com/v1/c/portada" as="fetch" crossorigin>
+<link rel="preload" href="https://ice.pokesurvivor.com/v1/c/reglas" as="fetch" crossorigin>
+<link rel="preload" href="datos.json?v=bf648404bb" as="fetch" crossorigin>
+<link rel="preload" href="../assets/fonts/PixelifyPS-400.ttf?v=2" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="../assets/fonts/PixelifyPS-700.ttf?v=2" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="comunidad.css?v=aa0aa85b8f">
+<script defer src="../assets/pages/fondo.js"></script>
+<script defer src="textos.js?v=418b09ada9"></script>
+<script defer src="comunidad.js?v=6715dcf80f"></script>
+<script src="../js/noframe.js"></script>
+</head>
+<body>
+<header class="top">
+  <button class="btn small ghost btn-menu" data-act="menu" aria-label="Menú" data-ta="Menú"><i class="ico" style="--s:20px" data-ico="menu"></i></button>
+  <a class="brand" href="#/"><span class="t1">PokéSurvivor</span><span class="t2" data-t="Comunidad">Comunidad</span></a>
+  <form class="buscar" data-form="filtro" data-ruta="buscar" role="search"><input class="field" name="q" maxlength="60" placeholder="Buscar en la comunidad…" data-tp="Buscar en la comunidad…" aria-label="Buscar"></form>
+  <div id="yo"></div>
+  <a class="btn small gold" href="../" data-t="Jugar">Jugar</a>
+</header>
+<div class="wrap">
+  <nav id="nav" class="box" aria-label="Comunidad"></nav>
+    <main id="main"><div class="inicio"><section class="box hero"><div class="hero-t"><h1 data-t="Comunidad de PokéSurvivor">Comunidad de PokéSurvivor</h1><p class="sub" data-t="Foro, builds, sugerencias y wiki de los jugadores. Participa, sube de rango y gana tickets del gacha.">Foro, builds, sugerencias y wiki de los jugadores. Participa, sube de rango y gana tickets del gacha.</p></div></section></div></main>
+  <footer class="pie">
+    <p><span data-t="Sé amable: nada de insultos, spam, trampas ni datos personales. El equipo puede borrar lo que se salte las normas.">Sé amable: nada de insultos, spam, trampas ni datos personales. El equipo puede borrar lo que se salte las normas.</span></p>
+    <p><a href="../" data-t="Jugar">Jugar</a> · <a href="../guias/" data-t="Guías">Guías</a> · <a href="../novedades/" data-t="Novedades">Novedades</a> · <a href="../privacidad/" data-t="Privacidad">Privacidad</a> · <a href="../apoyar/" data-t="Apoyar">Apoyar</a></p>
+    <p data-t="PokéSurvivor es un juego de fans gratuito y sin ánimo de lucro. Pokémon © Nintendo/Creatures/GAME FREAK.">PokéSurvivor es un juego de fans gratuito y sin ánimo de lucro. Pokémon © Nintendo/Creatures/GAME FREAK.</p>
+  </footer>
+</div>
+<div id="toasts" aria-live="polite"></div>
+<noscript><section class="box"><p>Activa JavaScript para usar la comunidad. · Enable JavaScript to use the community.</p></section></noscript>
+</body>
+</html>
