@@ -150,7 +150,7 @@
     '#btn-google,#btn-guest,#btn-logout,#set-logout,#btn-yt,#btn-discord,#btn-support,#menu-forum,#menu-banner,',
     '#rec-link,#video-yt,#chal-rank,#legal-delete,#f-forgot,[data-go="friends"],[data-go="rank"],#scr-mod{display:none!important}',
     // los huecos de Amigos y Clasificación los ocupan Gacha y Misiones
-    '#menu-list [data-go="gacha"]{grid-row:1 / span 2!important}#menu-list [data-go="goals"]{grid-column:7 / span 4!important}',
+    '.menu-list [data-go="gacha"]{grid-row:1 / span 2!important}.menu-list [data-go="goals"]{grid-column:7 / span 4!important}',
     '#scr-login .tabs,#scr-login #f-pass,#scr-login label[for="f-pass"]{display:none!important}',
     '#scr-login.ps-local .ps-local-note{margin:4px 0 10px;color:#ffd23f;font-size:.85em;line-height:1.35}',
     '.ps-upd{margin:0 0 14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.15)}',
