@@ -815,7 +815,7 @@
   window.PSPlus = { stock: function () { return healStock; }, claimAll: claimAll, readyMissions: readyMissions, modules: M, spare: spare, sprint: sprint, failed: failed, endless: endless, cfg: cfg };   // para revisar desde las pruebas
 
   // ─── Bucle ───
-  var lastState = '';
+  var lastState = '', lastT = 0;
   var tick = safe('Bucle', function () {
     if (!modules()) return;
     hookEndless();
@@ -823,7 +823,10 @@
     hookRewards();
     hookDex();
     var st = M.G.state, pl = M.G.player;
-    if (st === 'playing' && lastState !== 'playing' && lastState !== 'paused') { startRun(); applyFov(); }
+    // Partida nueva: solo al empezar de verdad (no al volver de subir de nivel, evolucionar o un evento,
+    // que también pasan por otros estados y antes reiniciaban las bayas guardadas y el modo sin fin)
+    if (st === 'playing' && (!run || M.G.time + 0.5 < lastT)) { startRun(); applyFov(); }
+    if (st === 'playing') lastT = M.G.time;
     if (st === 'over' && (lastState === 'playing' || lastState === 'paused')) endRun();
     lastState = st;
     var inRun = (st === 'playing' || st === 'paused') && !!pl;
