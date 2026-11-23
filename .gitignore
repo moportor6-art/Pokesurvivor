@@ -2,8 +2,8 @@
 build/
 app/build/
 local.properties
-node_modules/
-tools/web/node_modules/
+node_modules
+tools/web/node_modules
 capturas/
 *.part
 __pycache__/
