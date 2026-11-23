@@ -18,7 +18,7 @@
   var LS = 'psplus.';
   function load(k, d) { try { var v = localStorage.getItem(LS + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
   function save(k, v) { try { localStorage.setItem(LS + k, JSON.stringify(v)); } catch (e) { /* lleno */ } }
-  var cfg = Object.assign({ evo: true, meter: true, minimap: true, glow: false, fov: 1.15, endlessDefault: false }, load('cfg', {}));
+  var cfg = Object.assign({ evo: true, berries: true, autoOrbs: true, sprint: true, meter: true, minimap: true, glow: false, fov: 1.15, endlessDefault: false }, load('cfg', {}));
   function saveCfg() { save('cfg', cfg); }
   var failed = {};
   function safe(name, fn) {
@@ -197,6 +197,7 @@
     endless.armed = false;
     endless.nextBoss = 0;
     endless.cut = false;
+    spare = {}; if (window.PSPlus) window.PSPlus.spare = spare;
     dmgHist = [];
     run = { at: Date.now(), dex: pl.dex, shiny: !!pl.shiny, name: (pl.mon && (pl.mon.name || pl.mon.n)) || '', endless: endless.on, series: [], lastS: 0 };
   }
@@ -305,6 +306,9 @@
     } else if (tab === 'opts') {
       var opt = function (k, t, d) { return '<button class="psp-opt" data-a="opt" data-k="' + k + '"><span class="sw' + (cfg[k] ? ' on' : '') + '"></span><span><b>' + t + '</b><small>' + d + '</small></span></button>'; };
       h += opt('evo', 'Próxima evolución', 'Junto a tu vida: a qué evoluciona y en qué nivel (▲ si no evoluciona: nivel en que se hace más fuerte).');
+      h += opt('sprint', 'Botón de correr', 'Acelerón de +60 % de velocidad 3 s cada 20 s (también con Mayús).');
+      h += opt('autoOrbs', 'Esferas automáticas', 'Las esferas se usan solas: rodeado o con poca vida (Sopor, Ráfaga, Ralento), jefe cerca (Foco) o pantalla llena (Lumino).');
+      h += opt('berries', 'Bayas de repuesto', 'Una baya igual a la que llevas se guarda (hasta 3) en vez de gastarse sin curar.');
       h += opt('meter', 'Medidor de daño', 'Daño de cada movimiento y daño por segundo. Tócalo en partida para encogerlo.');
       h += opt('minimap', 'Minimapa', 'Enemigos (blanco), jefes (rojo), shinies (amarillo) y grietas (morado).');
       h += opt('glow', 'Brillo de poca vida', 'Bordes rojos y latido con menos del 20 % de vida (además del oscurecido del juego).');
@@ -402,6 +406,10 @@
     '.psp-evo .ar{color:#cfd8ff;font-size:12px}.psp-evo img{width:30px;height:30px;image-rendering:pixelated;border-radius:6px;background:rgba(255,255,255,.08)}',
     '.psp-evo .q{width:30px;height:30px;display:grid;place-items:center;border-radius:6px;background:rgba(255,255,255,.1);color:#fff;font-weight:bold;font-size:16px}.psp-evo .q.up{color:#5fe08a;font-size:13px}',
     '.psp-evo i{position:absolute;left:8px;right:8px;bottom:2px;height:3px;border-radius:2px;background:rgba(255,255,255,.15)}.psp-evo i u{display:block;height:100%;width:0;border-radius:2px;background:#ffd23f;text-decoration:none}.psp-evo.grow i u{background:#5fe08a}',
+    '.psp-spare{position:fixed;left:calc(max(8px,env(safe-area-inset-left)) + 6px);top:58px;z-index:40;display:flex;gap:8px;padding:2px 8px;border-radius:8px;background:rgba(10,16,40,.55);font-size:11px;font-weight:bold;pointer-events:none}',
+    '.psp-sprint{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:84px;z-index:41;width:64px;height:64px;border-radius:50%;border:3px solid #ffb24d;color:#fff;font:inherit;font-size:11px;padding:0;touch-action:none;',
+    'background:conic-gradient(rgba(255,178,77,.55) calc(var(--f,100)*1%),rgba(10,16,40,.7) 0);opacity:.7}',
+    '.psp-sprint.ready{opacity:1;box-shadow:0 0 12px rgba(255,178,77,.7)}.psp-sprint.active{background:#ffb24d;color:#1a1030}.psp-sprint b{pointer-events:none}',
     // Pokédex para teléfono
     '#scr-dex .box.wide{overflow:hidden!important;display:flex!important;flex-direction:column;padding-top:8px!important;padding-bottom:8px!important;gap:5px}',
     '#scr-dex .box.wide>.row{flex:none;margin:0!important}#scr-dex .box.wide>.row h2{font-size:17px;margin:0;white-space:nowrap}#scr-dex .box.wide>.row .btn{padding-top:3px;padding-bottom:3px}',
@@ -495,7 +503,119 @@
     evoBox.style.display = '';
   });
 
-  window.PSPlus = { modules: M, failed: failed, endless: endless, cfg: cfg };   // para revisar desde las pruebas
+
+  // ─── Bayas de repuesto ───
+  // El juego guarda una baya de cada clase; si coges otra igual, gasta la que tenías en ese momento (aunque tengas
+  // la vida llena y no te cure nada). Aquí la de más se guarda de repuesto (hasta 3 de cada) y entra sola en cuanto
+  // se gasta la que llevas, así que la próxima vez que bajes del 25 % te vuelve a curar.
+  var spare = {}, berryHooked = false;
+  var BERRY = { sitrus: ['Zidra', '#ffd23f'], atania: ['Atania', '#ff6f7d'], meloc: ['Meloc', '#7fd0ff'] };
+  var hookBerries = safe('Bayas de repuesto', function (pl) {
+    if (berryHooked || !pl) return;
+    var proto = Object.getPrototypeOf(pl), B = window.PSLocal.game(), T = B.Items && B.Items.TREAT;
+    if (!proto || typeof proto.takeTreat !== 'function' || typeof proto.useBerry !== 'function' || !T) return;
+    berryHooked = true;
+    var take = proto.takeTreat, use = proto.useBerry;
+    proto.takeTreat = function (j) {
+      if (cfg.berries && this === M.G.player && T[j] && T[j].berry && this.berries && this.berries[j] && (spare[j] || 0) < 3) {
+        spare[j] = (spare[j] || 0) + 1;
+        try { B.FX.dmgText(this.x, this.y - this.bodyH - 10, 'Baya ' + (BERRY[j] ? BERRY[j][0] : '') + ' de repuesto ×' + spare[j], '#9ff0c0', true); } catch (e) { /* nada */ }
+        return;
+      }
+      return take.apply(this, arguments);
+    };
+    proto.useBerry = function (j) {
+      var had = this.berries && this.berries[j];
+      var r = use.apply(this, arguments);
+      if (had && this === M.G.player && this.berries && !this.berries[j] && spare[j] > 0) { spare[j]--; this.berries[j] = true; }
+      return r;
+    };
+  });
+
+  // ─── Esferas automáticas ───
+  // Las esferas (Soporesfera, Ralentosfera, Rafagaesfera, Focosfera, Luminosfera, Rapidosfera) se usan solas
+  // cuando hacen falta: rodeado o con poca vida, con un jefe cerca, o con la pantalla llena de enemigos.
+  var orbT = 0;
+  var autoOrbs = safe('Esferas automáticas', function (pl) {
+    var S = find(['SLOTS', 'STACK', 'useSelected', 'canTake']);
+    if (!cfg.autoOrbs || !S || !pl || pl.dead || M.G.state !== 'playing' || !pl.orbs) return;
+    var now = M.G.time;
+    if (now - orbT < 1.2) return;
+    var slots = pl.orbs, has = function (id) { for (var i = 0; i < slots.length; i++) if (slots[i] && slots[i].id === id) return i; return -1; };
+    var en = M.E.all() || [], near = 0, close = 0, onScreen = 0, boss = false;
+    for (var i = 0; i < en.length; i++) {
+      var e = en[i];
+      if (e.dead) continue;
+      var d2 = (e.x - pl.x) * (e.x - pl.x) + (e.y - pl.y) * (e.y - pl.y);
+      if (d2 < 90 * 90) close++;
+      if (d2 < 170 * 170) near++;
+      if (d2 < 520 * 520) onScreen++;
+      if ((e.boss || e.legend) && d2 < 380 * 380) boss = true;
+    }
+    var hp = pl.maxHp ? pl.hp / pl.maxHp : 1, pick = [], why = '';
+    if (hp < 0.3 && (near >= 2 || boss)) { pick = ['slumber', 'blowback', 'slow', 'quick']; why = 'poca vida'; }
+    else if (close >= 6 || near >= 14) { pick = ['blowback', 'slow', 'slumber']; why = 'rodeado'; }
+    else if (boss && hp < 0.6) { pick = ['slow', 'focus']; why = 'jefe cerca'; }
+    else if (boss) { pick = ['focus']; why = 'jefe cerca'; }
+    else if (onScreen >= 30) { pick = ['luminous']; why = 'muchos enemigos'; }
+    for (var k = 0; k < pick.length; k++) {
+      var idx = has(pick[k]);
+      if (idx < 0) continue;
+      if (pick[k] === 'focus' || pick[k] === 'luminous' || pick[k] === 'quick') { if (pl.orbBuff && pl.orbBuff[pick[k]] > 0) continue; }
+      orbT = now;
+      var name = slots[idx].id;
+      try { S.use(pl, idx); } catch (e) { return; }
+      var L = S.BY && S.BY[name];
+      toast('Auto: ' + (L ? L.name : name) + ' (' + why + ')', L ? L.col : '#ffd23f');
+      return;
+    }
+  });
+
+  // ─── Botón de correr ───
+  // Un acelerón de vez en cuando: +60 % de velocidad 3 s, se recarga en 20 s (botón en pantalla o tecla Mayús).
+  var sprint = { btn: null, until: 0, ready: 0, on: false };
+  var DUR = 3, CD = 20, K = 1.6;
+  function sprintGo() {
+    if (!M.G || M.G.state !== 'playing') return;
+    var t = M.G.time;
+    if (t < sprint.ready) return;
+    sprint.until = t + DUR; sprint.ready = t + CD;
+    try { var pl = M.G.player; window.PSLocal.game().FX.ring(pl.x, pl.y, 6, 50, '#ffb24d', 0.4, 3); } catch (e) { /* nada */ }
+  }
+  document.addEventListener('keydown', function (e) { if (cfg.sprint && (e.key === 'Shift')) sprintGo(); });
+  var tickSprint = safe('Correr', function (pl, inRun) {
+    if (!sprint.btn) {
+      sprint.btn = el('button', 'psp-sprint', '<b>Correr</b><i></i>');
+      sprint.btn.addEventListener('touchstart', function (e) { e.preventDefault(); e.stopPropagation(); sprintGo(); }, { passive: false });
+      sprint.btn.addEventListener('click', function (e) { e.stopPropagation(); sprintGo(); });
+      document.body.appendChild(sprint.btn);
+    }
+    sprint.btn.style.display = cfg.sprint && inRun && M.G.state === 'playing' ? '' : 'none';
+    if (!inRun) { sprint.until = sprint.ready = 0; }
+    var t = M.G.time, active = inRun && t < sprint.until;
+    if (active) {
+      if (pl.__pspSpr !== pl.spdMul) { pl.spdMul *= K; pl.__pspSpr = pl.spdMul; }
+    } else if (pl.__pspSpr != null) {
+      if (pl.spdMul === pl.__pspSpr) pl.spdMul /= K;
+      pl.__pspSpr = null;
+    }
+    var left = Math.max(0, sprint.ready - t), f = left > 0 ? 1 - left / CD : 1;
+    sprint.btn.classList.toggle('ready', f >= 1);
+    sprint.btn.classList.toggle('active', active);
+    sprint.btn.style.setProperty('--f', String(Math.round(f * 100)));
+  });
+
+  // Repuestos visibles junto a la próxima evolución
+  var spareBox = null;
+  var drawSpare = safe('Bayas de repuesto (vista)', function (inRun) {
+    if (!spareBox) { spareBox = el('div', 'psp-spare'); document.body.appendChild(spareBox); }
+    var html = '';
+    if (cfg.berries && inRun) for (var j in spare) if (spare[j] > 0) html += '<span style="color:' + (BERRY[j] ? BERRY[j][1] : '#fff') + '">● ' + (BERRY[j] ? BERRY[j][0] : j) + ' +' + spare[j] + '</span>';
+    if (spareBox.innerHTML !== html) spareBox.innerHTML = html;
+    spareBox.style.display = html ? '' : 'none';
+  });
+
+  window.PSPlus = { modules: M, spare: spare, sprint: sprint, failed: failed, endless: endless, cfg: cfg };   // para revisar desde las pruebas
 
   // ─── Bucle ───
   var lastState = '';
@@ -510,7 +630,7 @@
     lastState = st;
     var inRun = (st === 'playing' || st === 'paused') && !!pl;
     if (inRun && st === 'playing') { sampleRun(pl); tickEndless(); applyFov(); }
-    if (pl) { drawEvo(pl, st === 'playing'); drawMeter(pl, st === 'playing'); drawMinimap(pl, st === 'playing'); drawGlow(pl, st === 'playing'); }
+    if (pl) { hookBerries(pl); autoOrbs(pl); tickSprint(pl, inRun); drawSpare(inRun); drawEvo(pl, st === 'playing'); drawMeter(pl, st === 'playing'); drawMinimap(pl, st === 'playing'); drawGlow(pl, st === 'playing'); }
   });
   document.addEventListener('DOMContentLoaded', function () {
     var s = document.createElement('style');
