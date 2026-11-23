@@ -1,0 +1,7 @@
+{
+  "name": "pokesurvivor-offline-preservation",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {"test": "node tests/offline-smoke.cjs"},
+  "devDependencies": {"jsdom": "26.1.0"}
+}
