@@ -20,7 +20,7 @@ ROOT = HERE.parents[1]
 WWW = ROOT / 'app/src/main/assets/www'
 STATE = HERE / 'estado.json'
 BASE = 'https://pokesurvivor.com/'
-OURS = {'local.js', 'plus.js'}   # archivos nuestros dentro de www (no vienen del sitio)
+OURS = {'local.js', 'plus.js', 'coop.js', 'js/vendor/peerjs.min.js'}   # archivos nuestros dentro de www (no vienen del sitio)
 SITE = ['index.html', 'favicon.ico', 'manifest.webmanifest', 'sw.js', 'version.json', 'css/style.css',
         'js/app.min.js', 'js/boot.js', 'js/core/locales.js', 'js/noframe.js',
         'assets/fonts/PixelifyPS-400.ttf', 'assets/fonts/PixelifyPS-700.ttf',

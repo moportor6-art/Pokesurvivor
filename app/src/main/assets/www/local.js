@@ -4,7 +4,7 @@
  *  · deja todo en el teléfono: nada sale a internet (cuentas, servidor, avisos, videos, Firebase, service worker);
  *  · crea sola la partida local la primera vez (solo pide el nombre de entrenador) y entra sola después;
  *  · esconde lo que necesita servidor o lleva fuera: Google, invitado, cerrar sesión, YouTube, Discord, apoyo,
- *    foro, amigos/salas, clasificación online, vincular Gmail;
+ *    foro, amigos, clasificación online, vincular Gmail (las salas vuelven con código: coop.js);
  *  · deja los eventos de temporada (Halloween) siempre activos;
  *  · añade «Actualizaciones» en Ajustes (busca la versión nueva y baja solo lo que cambió).
  */
@@ -41,7 +41,11 @@
     window[k] = function (url) { if (url && !isLocal(url)) return null; return orig.apply(window, arguments); };
   });
   try {   // WebSocket / WebRTC (salas online): no hay servidor
-    window.WebSocket = function () { throw new Error('Sin conexión: edición local'); };
+    // (salvo el cooperativo con código de coop.js, que se activa solo al crear o unirse a una sala)
+    window.WebSocket = function () {
+      if (window.PSCoop) return window.PSCoop.WebSocket.apply(this, arguments);
+      throw new Error('Sin conexión: edición local');
+    };
   } catch (e) { /* nada */ }
 
   // ─── 2. Acceso a los módulos del juego (sin tocar su código) ───

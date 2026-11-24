@@ -23,7 +23,12 @@ gritos, huevos, arenas, marcos, fotos de perfil y las páginas de guía/Pokédex
   Si una actualización del juego rompe alguna mejora, esa se apaga sola y el juego sigue normal.
 - Atrás de Android: en partida pausa, en una ventana la cierra y en el menú pregunta antes de salir.
 
-No disponible sin servidor: amigos/salas online, clasificación online y vincular Google (se esconden).
+- **Cooperativo con código** (hasta 4): *👥 Cooperativo* en el menú → «Crear sala» da un código de 5 letras y los demás
+  entran con «Unirse». Es el cooperativo original del juego; la sala la sirve el teléfono de quien la crea (PeerJS, como
+  DB Survivors) en vez del servidor de pokesurvivor.com (`www/coop.js`). Solo con una sala abierta se usa internet.
+  Si el anfitrión se va, la sala se cierra (no hay cambio de anfitrión).
+
+No disponible sin servidor: amigos, clasificación online y vincular Google (se esconden).
 
 ## Instalar
 
@@ -36,6 +41,7 @@ Si tenías la **0.1.0 parcial**, desinstálala primero (la firma es otra); desde
 |---|---|
 | Juego (copia de la web, sin tocar) | `app/src/main/assets/www/` |
 | Capa local (lo único nuestro dentro del juego) | `app/src/main/assets/www/local.js`, cargada desde `index.html` |
+| Cooperativo con código | `www/coop.js` + `www/js/vendor/peerjs.min.js` (MIT) |
 | App Android (WebView, servidor de archivos, Atrás) | `app/src/main/java/.../MainActivity.java` |
 | Actualizador | `app/src/main/java/.../Updater.java` + `contenido.json` en cada versión |
 | Bajar la web y ponerla al día | `tools/web/actualizar.py` (catálogos: `jslit.py` y `catalogo.cjs`; páginas: `paginas.py`) |
