@@ -1030,6 +1030,12 @@ body.touch kbd, body.touch .card .key, body.touch .kbd-hint { display: none !imp
 .set-row b { display: block; }
 .set-row small { display: block; color: var(--muted); font-size: 12px; }
 .set-row .switch { min-width: 58px; }
+.set-opacity { display: block; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+.set-opacity-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.set-opacity-head label { font-weight: 700; cursor: pointer; }
+.set-opacity-head output { color: var(--gold); font-variant-numeric: tabular-nums; }
+.set-opacity small { display: block; color: var(--muted); font-size: 12px; }
+.set-opacity input[type=range] { display: block; margin-top: 10px; }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .set-chips { margin: 6px 0 10px; }
 .keys { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; align-items: center; font-size: 14px; }
