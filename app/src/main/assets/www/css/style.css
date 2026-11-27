@@ -2131,3 +2131,88 @@ html:lang(zh) .btn, html:lang(zh) .chip { letter-spacing: 0; }
   #scr-menu .mf-t small { margin: 0; font-size: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
   #scr-menu .mf-n { top: -8px; right: -6px; min-width: 18px; font-size: 11px; line-height: 16px; }
 }
+
+/* ---------- Modo streamer en el menú (27-11-2026; dev.html #menu-twitch, js/ui/menu.js twitchLine) ----------
+ * «Juega con tu comunidad» con el logo de Twitch, encima del foro y como él, en morado. Con el canal vinculado y partner o
+ * afiliado: «Jugar», grande, con el logo de Twitch y el canal debajo. En el móvil en horizontal no cabe: no sale. */
+.menu-twitch { position: relative; display: flex; align-items: center; gap: 12px; margin: 10px auto 0; width: min(100%, 360px); padding: 8px 16px;
+  background: linear-gradient(180deg, #3a2370, #241446); border: 3px solid #9147ff; border-radius: 12px; cursor: pointer; font: inherit;
+  box-shadow: 0 0 0 3px var(--edge-out), inset 0 0 0 2px #6a2fd0, 0 10px 26px rgba(0,0,0,.45);
+  color: #fff; text-align: left; text-shadow: 2px 2px 0 var(--shadow); transition: transform .08s, filter .12s; }
+.menu-twitch.hidden { display: none; }
+/* (27-11: el modo streamer oculto hasta que Twitch apruebe la extensión, salvo con el enlace secreto: js/net/streamer-net.js visible.) */
+.menu-twitch.off, #set-tabs .gen-tab.off { display: none !important; }
+.menu-twitch .mt-ico { display: flex; flex: 0 0 auto; }
+.menu-twitch .mt-ico img { width: 40px; height: 40px; image-rendering: pixelated; }
+.mt-t { display: flex; flex-direction: column; min-width: 0; font-size: 20px; font-weight: 700; color: #d9c4ff; line-height: 1.1; }
+.mt-t small { font-size: 12px; font-weight: 400; color: var(--muted); margin-top: 3px; }
+/* Vinculado y partner o afiliado: «Jugar» y, debajo, el logo pequeño y el canal. */
+.menu-twitch.live { flex-direction: column; justify-content: center; gap: 2px; }
+.menu-twitch.live .mt-t { align-items: center; font-size: 30px; color: var(--gold); }
+.menu-twitch.live .mt-t small { display: flex; align-items: center; gap: 6px; color: #d9c4ff; font-size: 13px; }
+.menu-twitch.live .mt-t small img { width: 18px; height: 18px; image-rendering: pixelated; }
+@media (hover: hover) { .menu-twitch:hover { filter: brightness(1.15); transform: translateY(-2px); } }
+.menu-twitch:active { transform: translateY(1px); }
+.menu-twitch:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+@media (min-width: 761px) and (min-height: 521px) {
+  #scr-menu .menu-twitch { position: fixed; right: 16px; z-index: 2; margin: 0; width: max(calc(250 * var(--u)), 210px);
+    bottom: calc(max(18px, env(safe-area-inset-bottom)) + max(calc(96 * var(--u)), 76px) + 12px);
+    min-height: max(calc(70 * var(--u)), 58px); padding: calc(8 * var(--u)) calc(16 * var(--u)); gap: calc(12 * var(--u)); }
+}
+@media (max-height: 520px) { #scr-menu .menu-twitch { display: none; } }
+
+/* ====== Modo streamer (26-11-2026, js/ui/streamer-ui.js) ======
+ * El morado de Twitch (#9147ff) para lo del modo: su pestaña de Ajustes, la pantalla y su resumen. */
+.set-streamer-btn { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; }
+.str-box { width: min(760px, 100%); margin-top: 44px; max-height: calc(100vh - 110px); max-height: calc(100dvh - 110px); overflow-y: auto; }
+.str-link { padding: 10px 12px; border: 2px solid rgba(145,71,255,.55); border-radius: 10px; background: rgba(145,71,255,.08); }
+.str-link .note { margin: 0; }
+.str-link .sub { margin: 4px 0; font-size: 13px; }
+.str-linked { display: flex; align-items: center; gap: 10px; }
+.str-linked b { display: block; font-size: 18px; }
+.str-linked small { color: var(--muted); }
+.str-dot { display: inline-block; flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%; background: #5fe08a; box-shadow: 0 0 6px #5fe08a; }
+.str-dot.off { background: #ff6b6b; box-shadow: 0 0 6px #ff6b6b; }
+.str-steps { margin: 0 0 8px; padding-left: 20px; font-size: 14px; line-height: 1.4; }
+.str-steps a { color: #bf94ff; }
+.str-code-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 4px 0 6px; }
+.str-code { font-size: 30px; letter-spacing: 4px; color: #fff; background: rgba(0,0,0,.35); border: 2px dashed #9147ff; border-radius: 8px; padding: 2px 14px;
+  user-select: all; -webkit-user-select: all; font-family: ui-monospace, Consolas, monospace; }
+.str-code-row small { margin: 0; font-size: 12px; }
+.str-cats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.str-cat h3 { display: flex; align-items: center; gap: 6px; margin: 4px 0 6px; font-size: 17px; }
+.str-fx-row { display: grid; grid-template-columns: 1fr auto; column-gap: 8px; padding: 5px 8px; margin-bottom: 4px; border-radius: 8px; background: rgba(0,0,0,.22); }
+.str-fx-row b { font-size: 14px; }
+.str-fx-row small { grid-column: span 2; color: var(--muted); font-size: 12px; line-height: 1.25; }
+.str-bits { color: #bf94ff; font-weight: 700; font-size: 13px; white-space: nowrap; }
+.str-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 8px; }
+.str-table th { text-align: left; color: var(--muted); font-weight: 400; padding: 4px 6px; border-bottom: 1px solid rgba(255,255,255,.15); }
+.str-table td { padding: 4px 6px; border-bottom: 1px solid rgba(255,255,255,.06); }
+.str-table tr.me td { color: var(--gold); }
+.str-over { width: min(520px, 100%); }
+.str-over-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
+.str-over-stats div { display: flex; flex-direction: column; padding: 8px; border-radius: 8px; background: rgba(0,0,0,.25); }
+.str-over-stats small { color: var(--muted); font-size: 12px; }
+.str-over-stats b { font-size: 22px; }
+.pause-streamer { margin: 8px 0; }
+.pause-streamer .sub { margin: 0 0 6px; font-size: 13px; }
+.str-test { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; max-height: 40vh; overflow-y: auto; padding: 2px; }   /* (27-11: 58 efectos) */
+.str-test .btn { border-width: 2px; }
+
+/* ====== Guía rápida (26-11-2026, js/ui/tour.js): todo oscuro menos el botón del paso, y un bocadillo al lado ====== */
+.tour { position: fixed; inset: 0; z-index: 95; }
+.tour-hole { position: fixed; border-radius: 10px; border: 3px solid var(--gold); pointer-events: none;
+  box-shadow: 0 0 0 9999px rgba(5, 9, 20, .74), 0 0 18px rgba(255, 210, 63, .6); transition: all .22s ease; animation: tour-glow 1.3s ease-in-out infinite; }
+@keyframes tour-glow { 50% { box-shadow: 0 0 0 9999px rgba(5, 9, 20, .74), 0 0 30px rgba(255, 210, 63, .95); } }
+.tour-tip { position: fixed; width: min(360px, calc(100vw - 20px)); padding: 12px 14px; border-radius: 12px;
+  background: linear-gradient(180deg, var(--box1), var(--box2)); border: 3px solid var(--edge); box-shadow: 0 0 0 2px var(--edge-out), 0 8px 24px rgba(0, 0, 0, .55);
+  transition: left .22s ease, top .22s ease; }
+.tour-n { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.tour-t { display: block; font-size: 18px; color: var(--gold); text-shadow: 2px 2px 0 var(--shadow); margin-bottom: 4px; }
+.tour-p { margin: 0 0 10px; font-family: var(--font-clear); font-size: 14px; line-height: 1.4; }
+.tour-btns { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.tour-btns .btn { text-decoration: none; }
+@media (prefers-reduced-motion: reduce) { .tour-hole, .tour-tip { transition: none; animation: none; } }
+.str-head { gap: 8px; flex-wrap: wrap; }
+.str-head-btns { gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.str-head-btns a.btn { text-decoration: none; }

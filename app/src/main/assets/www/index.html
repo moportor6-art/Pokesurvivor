@@ -7,7 +7,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>PokéSurvivor – Juego Pokémon gratis online estilo Survivor.io</title>
 <meta name="description" content="Sobrevive a hordas de Pokémon con tu compañero en este fan game gratis para navegador y móvil: 1025 Pokémon, shinies, legendarios y cooperativo con amigos. Sin descargas ni anuncios.">
-
 <link rel="canonical" href="https://pokesurvivor.com/">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="theme-color" content="#0a1430">
@@ -27,7 +26,6 @@
 <meta name="twitter:description" content="Fan game gratis para navegador y móvil, con cooperativo hasta 4. Sin descargas ni anuncios.">
 <meta name="twitter:image" content="https://pokesurvivor.com/assets/og-image.jpg">
 <meta name="ps-pages" content="1">
-
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="48x48" href="assets/icons/icon-48.png">
@@ -41,7 +39,6 @@
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
 <link rel="preload" href="assets/fonts/PixelifyPS-400.ttf?v=2" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="assets/fonts/PixelifyPS-700.ttf?v=2" as="font" type="font/ttf" crossorigin>
-
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -86,9 +83,8 @@
   ]
 }
 </script>
-
-<link rel="stylesheet" href="css/style.css?v=189364acd8">
-<script src="js/core/locales.js?v=9275555cfc"></script>
+<link rel="stylesheet" href="css/style.css?v=b565990bf9">
+<script src="js/core/locales.js?v=bf724a6e54"></script>
 <script src="js/noframe.js?v=3339f80f99"></script>
 </head>
 <body>
@@ -188,6 +184,9 @@
         <a id="menu-forum" class="menu-forum" href="comunidad/" target="_blank" rel="noopener" title="Abre la comunidad en otra pestaña">
       <span class="mf-ico" id="menu-forum-ico"></span><span class="mf-t">Foro<small>Builds, sugerencias y wiki</small></span><b class="mf-n hidden" id="menu-forum-n"></b>
     </a>
+        <button id="menu-twitch" class="menu-twitch off" type="button">
+      <span class="mt-ico" id="menu-twitch-ico"></span><span class="mt-t" id="menu-twitch-t"></span>
+    </button>
   </div>
   <div class="menu-right">
     <div class="box">
@@ -283,6 +282,7 @@
       <button class="gen-tab" data-t="ctl">Controles</button>
       <button class="gen-tab" data-t="a11y">Accesibilidad</button>
       <button class="gen-tab" data-t="acc">Cuenta</button>
+            <button class="gen-tab off" data-t="streamer">Streamer</button>
       <button class="gen-tab" data-t="guides">Guías</button>
       <button class="gen-tab" data-t="about">Acerca de</button>
     </div>
@@ -353,8 +353,7 @@
       <h1>PokéSurvivor</h1>
       <p>PokéSurvivor necesita JavaScript para funcionar. Actívalo para jugar.</p>
       <p>Fan game gratuito de supervivencia con 1025 Pokémon de las 9 regiones: elige tu compañero, sobrevive a las hordas, evoluciona tus ataques, enfréntate a legendarios y juega en cooperativo con hasta 4 amigos.</p>
-      <p><a href="guia/">Guía del juego</a> · <a href="pokedex/">Pokédex: todos los Pokémon jugables</a></p>
-    </div>
+      <p><a href="guia/">Guía del juego</a> · <a href="pokedex/">Pokédex: todos los Pokémon jugables</a></p>    </div>
   </div>
 </noscript>
 
@@ -693,6 +692,7 @@
       <button id="btn-pause-settings" class="btn">Ajustes</button>
       <button id="btn-quit" class="btn">Abandonar run</button>
     </div>
+    <div id="pause-streamer" class="pause-streamer hidden"></div>
     <div id="pause-sum" class="pause-sum"></div>
     <div id="pause-sound" class="sound-inline"></div>
   </div>
@@ -709,6 +709,37 @@
   </div>
 </section>
 
-<script defer src="js/app.min.js?v=c686e625ec"></script>
+<section id="scr-streamer" class="scr dim hidden">
+  <div class="box str-box">
+    <div class="row between str-head"><h2>Modo streamer</h2>
+            <div class="row str-head-btns"><button class="btn small ghost" id="str-tour">Guía rápida</button>
+        <a class="btn small ghost" id="str-guide" target="_blank" rel="noopener">Guía completa</a>
+        <button class="btn small ghost" id="str-close">Volver</button></div></div>
+    <p class="sub" style="margin:4px 0 10px">Tus espectadores usan bits de Twitch para que pasen cosas en tu partida: hordas, jefes, curas, caos y votaciones. En solitario y sin premios para tu cuenta: tiene su propio ranking de streamers.</p>
+    <div id="str-link" class="str-link"></div>
+    <div class="row" style="gap:8px;margin:12px 0 6px">
+      <button class="btn gold grow" id="str-play">Jugar en modo streamer</button>
+      <button class="btn ghost" id="str-test">Probar sin Twitch</button>
+      <button class="btn ghost" id="str-rank">Ranking de streamers</button>
+    </div>
+    <div id="str-fx" class="str-fx"></div>
+    <div id="str-ranking" class="str-ranking hidden"></div>
+  </div>
+</section>
+
+<section id="scr-str-over" class="scr dim hidden">
+  <div class="box center str-over">
+    <h2 id="str-over-title">Partida terminada</h2>
+    <div id="str-over-stats" class="str-over-stats"></div>
+    <p id="str-over-rank" class="sub"></p>
+    <div class="row" style="justify-content:center;gap:8px">
+      <button class="btn gold" id="str-over-again">Otra partida</button>
+      <button class="btn" id="str-over-str">Modo streamer</button>
+      <button class="btn ghost" id="str-over-menu">Menú</button>
+    </div>
+  </div>
+</section>
+
+<script defer src="js/app.min.js?v=c85b135cc1"></script>
 </body>
 </html>

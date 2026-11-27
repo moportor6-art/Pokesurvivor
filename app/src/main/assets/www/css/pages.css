@@ -140,3 +140,28 @@ ul.tiers li small { display: block; color: var(--muted); font-size: 13px; }
 .hub-foot .cta { justify-content: center; }
 body:has(canvas.fondo) footer { background: rgba(10,20,48,.82); border: 2px solid rgba(244,248,255,.35); border-radius: 12px; margin-bottom: 30px; padding: 12px 18px; }
 @media (max-width: 600px) { .top { position: static; flex-wrap: wrap; justify-content: center; } .top nav { justify-content: center; } }
+
+/* ====== Guía del modo streamer (26-11-2026, make_seo_pages.py streamer_page) ====== */
+.toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.toc a { padding: 4px 12px; border-radius: 999px; background: rgba(5,10,30,.45); border: 2px solid rgba(244,248,255,.3); color: var(--ink); text-decoration: none; font-size: 15px; font-weight: 600; }
+.toc a:hover { border-color: var(--gold); }
+ol.steps { list-style: none; counter-reset: st; padding: 0; margin: 14px 0; display: grid; gap: 22px; }
+ol.steps > li { counter-increment: st; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 0 14px; margin: 0; }
+ol.steps > li::before { content: counter(st); width: 40px; height: 40px; display: grid; place-items: center; font: 700 20px 'Pixelify', sans-serif; color: #1d1300;
+  background: var(--gold); border: 3px solid var(--edge); border-radius: 9px; box-shadow: 0 3px 0 #050914; }
+ol.steps > li > div { min-width: 0; }
+ol.steps h3 { margin: 6px 0 4px; }
+.path { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin: 6px 0; }
+.path span { background: rgba(5,10,30,.45); border: 1px solid rgba(244,248,255,.3); border-radius: 6px; padding: 1px 8px; font-size: 15px; font-weight: 600; }
+.path i { color: var(--muted); font-style: normal; }
+figure.shot { margin: 10px 0 4px; }
+figure.shot img { display: block; max-width: 100%; height: auto; border-radius: 8px; border: 3px solid var(--edge); box-shadow: 0 0 0 3px #050914, 0 8px 20px rgba(0,0,0,.4); }
+figure.shot figcaption { color: var(--muted); font-size: 14px; margin-top: 6px; }
+.shots { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+.shots > figure.shot { flex: 1 1 220px; max-width: 347px; }
+.shots > figure.shot img { width: 100%; }
+.shots.two > figure.shot { flex: 1 1 300px; max-width: none; }
+.shots.two > figure.shot img { width: 100%; }
+.shots > .grow { flex: 1 1 260px; min-width: 0; }
+.str-guide img.px { image-rendering: pixelated; vertical-align: -6px; }
+.str-guide h3 small { color: var(--muted); font-weight: 400; font-size: 15px; }
