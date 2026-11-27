@@ -1,4 +1,4 @@
-"""Pone la capa local (PeerJS, coop.js, local.js y plus.js) en el index.html del juego, antes de cualquier otro script.
+"""Pone la capa local (PeerJS, coop.js, local.js, plus.js y el mundo generado: worldgen.js + mundos.js) en el index.html del juego, antes de cualquier otro script.
 
 uso: python3 -I inyectar.py <carpeta del juego>
 Es lo único que se cambia del juego original. Si el index.html ya la tiene, no hace nada.
@@ -7,8 +7,10 @@ import re, sys
 from pathlib import Path
 
 TAG = ('<script src="js/vendor/peerjs.min.js"></script><script src="coop.js"></script>'
-       '<script src="local.js"></script><script src="plus.js"></script>')
-OLDS = ['<script src="local.js"></script><script src="plus.js"></script>', '<script src="local.js"></script>']
+       '<script src="local.js"></script><script src="plus.js"></script>'
+       '<script src="worldgen.js"></script><script src="mundos.js"></script>')
+OLDS = ['<script src="js/vendor/peerjs.min.js"></script><script src="coop.js"></script><script src="local.js"></script><script src="plus.js"></script>',
+        '<script src="local.js"></script><script src="plus.js"></script>', '<script src="local.js"></script>']
 www = Path(sys.argv[1])
 idx = www / 'index.html'
 html = idx.read_text(encoding='utf-8')
@@ -26,6 +28,6 @@ elif TAG not in html:
     print('capa local puesta en index.html')
 else:
     print('index.html ya tenía la capa local')
-for f in ('local.js', 'plus.js', 'coop.js', 'js/vendor/peerjs.min.js'):
+for f in ('local.js', 'plus.js', 'coop.js', 'js/vendor/peerjs.min.js', 'worldgen.js', 'mundos.js'):
     if not (www / f).is_file():
         raise SystemExit('falta ' + f + ' en ' + str(www))

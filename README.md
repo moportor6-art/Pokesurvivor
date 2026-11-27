@@ -21,6 +21,10 @@ gritos, huevos, arenas, marcos, fotos de perfil y las páginas de guía/Pokédex
   «Invocar a Arceus» en la pausa), **medidor de daño** por movimiento, **minimapa**, **campo de visión** más amplio,
   **historial de partidas** con gráfica de daño y **récords por Pokémon**. Se configura tocando las estadísticas del menú.
   Si una actualización del juego rompe alguna mejora, esa se apaga sola y el juego sigue normal.
+- **🌱 Mundo generado** (0.3, `www/mundos.js` + `www/worldgen.js` del repo [worldgen](https://github.com/moportor6-art/worldgen)):
+  botón en el menú. Con él activado, la partida rota entre 4 biomas nuevos (Playa Coral, Pantano Niebla, Ruinas del
+  Desierto y Tundra Helada) y aparecen estructuras de piedra por el mapa (ruinas, arenas y laberintos). Como Plus, no
+  toca el código del juego y se apaga solo si deja de encajar. Apagado, el juego queda como siempre.
 - Atrás de Android: en partida pausa, en una ventana la cierra y en el menú pregunta antes de salir.
 
 - **Cooperativo con código** (hasta 4): *👥 Cooperativo* en el menú → «Crear sala» da un código de 5 letras y los demás
